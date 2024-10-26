@@ -1,7 +1,8 @@
 import {
     Pressable, StyleSheet, Text, TextInput,
     TouchableOpacity, View, Alert,
-    ActivityIndicator
+    ActivityIndicator,
+    Image
 } from 'react-native'
 import React, { useEffect, useLayoutEffect, useState } from 'react'
 import { Platform } from 'react-native';
@@ -22,7 +23,7 @@ const Login = ({ navigation }) => {
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [adresse, setAdress] = useState('');
-    const [birthDate, setBirthDate] = useState('');
+    const [birthDate, setBirthDate] = useState(new Date());
     const [phoneNumber, setPhoneNumber] = useState('');
     const [role, setRole] = useState("ADMIN")
     const handleChange = (text) => {
@@ -137,7 +138,10 @@ const Login = ({ navigation }) => {
                             color="white"
                         />
                         :
-                        <AntDesign name="twitter" size={80} color="white" />
+                        //<AntDesign name="twitter" size={80} color="white" />
+                        <Image 
+                        source={require('../assets/forum_domus_png2x.png')}
+                        />
                 }
 
             </View>
@@ -172,7 +176,7 @@ const Login = ({ navigation }) => {
                         />
                         <TextInput
                             style={styles.input}
-                            placeholder="Adress"
+                            placeholder="Address"
                             value={adresse}
                             onChangeText={setAdress}
                             keyboardType="address"
@@ -257,7 +261,7 @@ const styles = StyleSheet.create({
         alignItems: "center"
     },
     logo: {
-        marginBottom: 50
+        marginBottom: 10
     },
     inputContainer: {
         width: "100%",

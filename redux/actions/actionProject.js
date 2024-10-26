@@ -47,8 +47,6 @@ export const deleteProjectById = (token,idProject) => async (dispatch) => {
   }
 };
 export const fetchProject = (token, idProject) => {
-    console.log("token: "+token)
-    console.log('idProject: '+idProject)
     return async (dispatch) => {
         try {
             const response = await fetch(`http://${ADRESSE_IP}:9026/project/${idProject}`, {
@@ -96,9 +94,6 @@ export const deleteUserFromProject = (token,idProject,idUser) => async (dispatch
 };
 export const addUserToProject = (token,idProject,idUser) => async (dispatch) => {
   try {
-    console.log('token: '+token);
-    console.log('idProject: '+idProject);
-    console.log("idUser: "+idUser);
     const response = await fetch(`http://${ADRESSE_IP}:9026/project/add_membre/${idProject}/${idUser}`, {
                 method: 'POST',
                 headers: {
@@ -125,4 +120,21 @@ export const getPossibleUser = (token,idProject) => async (dispatch) => {
     console.log(error)
   }
 };
+
+export const fetchParticipantProjects = (token, idUser) => {
+    return async (dispatch) => {
+        try {
+            const response = await fetch(`http://${ADRESSE_IP}:9026/project/by_participant/${idUser}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'content-type': 'application/json'
+                }
+            });
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.log(error)
+        }
+    }
+}
 

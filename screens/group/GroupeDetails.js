@@ -1,99 +1,94 @@
-import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, 
-View, Modal, ScrollView } from 'react-native'
+
+
+import {
+  View, Text, Image, ActivityIndicator, TouchableOpacity,
+  FlatList, Modal, StyleSheet, SafeAreaView
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react'
 import { useDispatch } from 'react-redux';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { MaterialIcons } from '@expo/vector-icons';
 import { addUserToGroupe, deleteUserFromGroupe, fetchGroup, getPossibleUser } from '../../redux/actions/actionGroupe';
 
+
+// Données d'exemple pour les utilisateurs qui peuvent être ajoutés
 const GroupeDetails = ({ navigation, route }) => {
   const [groupe, setGroupe] = useState(null);
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(true);
-  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
-  const [addModalVisible, setAddModalVisible] = useState(false);
-  const [selectedParticipant, setSelectedParticipant] = useState(null);
-  const [token,setToken] = useState(null);
-  const [userToAdd,setUserToAdd]= useState([]);
+  const [token, setToken] = useState(null);
+  const [role, setRole] = useState()
+  const [userToAdd, setUserToAdd] = useState([]);
   let idGroupe = route.params.idGroupe
-  const openDeleteModal = (participant) => {
-    setSelectedParticipant(participant);
-    setDeleteModalVisible(true);
-  };
-  const deleteParticipant = async() => {
-    // Dispatch action to delete participant
-    console.log("selectedidUser:  "+selectedParticipant.idUser)
-   let deleteUser = await dispatch(deleteUserFromGroupe(token,groupe.idGroupe,selectedParticipant.idUser));
-    setDeleteModalVisible(false);
+  let loadListGroupe = route.params.loadListGroupe;
+  const [groupName, setGroupName] = useState("Groupe de Projet A");
+  const [members, setMembers] = useState();
+  const [selectedMember, setSelectedMember] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [idUser, setIdUser] = useState();
+  const onDeleteMember = async (memberToDelete) => {
+    let deleteUser = await dispatch(deleteUserFromGroupe(token, groupe.idGroupe, memberToDelete.idUser));
     load();
   };
-  const addParticipant = async(user) => {
-    console.log('user: '+JSON.stringify(user))
-    let addUser = await dispatch(addUserToGroupe(token,groupe.idGroupe,user.idUser))
-    setAddModalVisible(false);
+  const onLeaveGroupe = async () => {
+    let deleteUser = await dispatch(deleteUserFromGroupe(token, groupe.idGroupe, idUser));
+    loadListGroupe();
+    navigation.navigate('Sujets')
+  }
+
+  const onAddMember = async (user) => {
+    let addUser = await dispatch(addUserToGroupe(token, groupe.idGroupe, user.idUser))
     load();
+    setShowAddModal(false);
   };
-  const renderDeleteModal = () => (
-    <Modal
-      animationType="slide"
-      transparent={true}
-      visible={deleteModalVisible}
-      onRequestClose={() => setDeleteModalVisible(false)}
-    >
-      <View style={styles.centeredView}>
-        <View style={styles.modalView}>
-          <Text style={styles.modalText}>Êtes-vous sûr de vouloir supprimer ce membre ?</Text>
-          <View style={styles.modalButtons}>
-            <TouchableOpacity
-              style={[styles.button, styles.buttonCancel]}
-              onPress={() => setDeleteModalVisible(false)}
-            >
-            <Text style={styles.textStyle}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.button, styles.buttonDelete]}
-              onPress={deleteParticipant}
-            >
-              <Text style={styles.textStyle}>Delete</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+  const renderMember = ({ item }) => (
+    <View style={styles.memberItem}>
+      <Image
+        source={
+          item.photo
+            ? { uri: item.photo }
+            : item.gender === 'MALE'
+              ? require('../../assets/avatar0.png')
+              : require('../../assets/avatar2.png')
+        }
+        style={styles.memberPhoto} />
+      <View style={styles.memberInfo}>
+        <Text style={styles.memberName}>{`${item.firstName} ${item.lastName}`}</Text>
+        <Text style={styles.memberEmail}>{item.email}</Text>
       </View>
-    </Modal>
+      {role == "ADMIN" &&
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={() => {
+            setSelectedMember(item);
+            setShowDeleteModal(true);
+          }}
+        >
+          <Ionicons name="trash-outline" size={24} color="red" />
+        </TouchableOpacity>
+      }
+    </View>
   );
-  const renderAddModal = () => (
-    <Modal
-      animationType="slide"
-      transparent={true}
-      visible={addModalVisible}
-      onRequestClose={() => setAddModalVisible(false)}
-    >
-      <View style={styles.centeredView}>
-        <View style={styles.modalViewParticipant}>
-          <Text style={styles.titleModal}>select user </Text>
-          {<FlatList
-            data={userToAdd}
-            renderItem={({ item }) => (
-              <View style={styles.participantItem2}>
-              <TouchableOpacity style={styles.userItem} onPress={() => addParticipant(item)}>
-                <Text>{item.firstName} {item.LastName}</Text>
-              </TouchableOpacity>
-              </View>
-            )}
-            keyExtractor={item => item.idUser.toString()}
-          />
-          }
-          <TouchableOpacity
-            style={[styles.button, styles.buttonCancelModal]}
-            onPress={() => setAddModalVisible(false)}
-          >
-            <Text style={styles.textStyle}>Fermer</Text>
-          </TouchableOpacity>
-        </View>
+
+  const renderAvailableUser = ({ item }) => (
+    <TouchableOpacity style={styles.availableUserItem} onPress={() => onAddMember(item)}>
+      <Image
+        source={
+          item.photo
+            ? { uri: item.photo }
+            : item.gender === 'MALE'
+              ? require('../../assets/avatar0.png')
+              : require('../../assets/avatar2.png')
+        }
+        style={styles.memberPhoto} />
+      <View style={styles.memberInfo}>
+        <Text style={styles.memberName}>{`${item.firstName} ${item.lastName}`}</Text>
+        <Text style={styles.memberEmail}>{item.email}</Text>
       </View>
-    </Modal>
+    </TouchableOpacity>
   );
-  
   const load = async () => {
     try {
       let userDetails = await AsyncStorage.getItem("userDetails");
@@ -101,11 +96,13 @@ const GroupeDetails = ({ navigation, route }) => {
         let user = JSON.parse(userDetails);
         let tokens = user.token;
         setToken(tokens);
+        setRole(user.role)
+        setIdUser(user.userId)
         const result = await dispatch(fetchGroup(tokens, idGroupe));
         setGroupe(result);
-       // console.log("idEvent: "+result.idEvent);
-        const result2 = await dispatch(getPossibleUser(token,result.idGroupe))
-        console.log("result2: "+result2)
+        setGroupName(result.label)
+        setMembers(result.membres)
+        const result2 = await dispatch(getPossibleUser(token, result.idGroupe))
         setUserToAdd(result2)
         // Faites quelque chose avec profileData ici
       } else {
@@ -119,237 +116,234 @@ const GroupeDetails = ({ navigation, route }) => {
   }
   useEffect(() => {
     load();
-  }, [])
-    const renderFooter = () => (
-    <TouchableOpacity
-      style={styles.addParticipantButton}
-      onPress={() => setAddModalVisible(true)
-      }
-    >
-      <MaterialIcons name="person-add" size={24} color="blue" />
-      <Text style={styles.addParticipantText}>Add participant</Text>
-    </TouchableOpacity>
-  );
-  const renderParticipant = ({ item }) => (
-    <View style={styles.participantItem}>
-      <Text>{item.firstName} {item.lastName}</Text>
-      <TouchableOpacity onPress={() => openDeleteModal(item)}>
-        <MaterialIcons name="delete" size={24} color="red" />
-      </TouchableOpacity>
-    </View>
-  );
+  }, [role])
   if (loading) {
     return (<ActivityIndicator size="large" color="#0000ff" />);  // Afficher un indicateur de chargement
   } else {
     return (
-      <ScrollView style={styles.container}>
-        <Text style={styles.pageTitle}>{groupe.label}</Text>
-        <View style={styles.bioContainer}>
- 
-          <Text style={styles.participantsTitle}>Membres :</Text>
-          <FlatList
-            data={groupe.membres}
-            renderItem={renderParticipant}
-            keyExtractor={(item) => item.idUser.toString()}
-            ListFooterComponent={renderFooter}
-          />
-        </View>
-        {renderDeleteModal()}
-        {renderAddModal()}
-      </ScrollView>
+      <SafeAreaView style={styles.container}>
+        <Text style={styles.groupTitle}>{groupName}</Text>
+        <Text style={styles.membreTitle}>Membres:</Text>
+        <FlatList
+          data={groupe.membres}
+          renderItem={renderMember}
+          keyExtractor={(item) => item.id}
+          style={styles.memberList}
+        />
+        {role == "ADMIN" &&
+          <TouchableOpacity style={styles.addButton} onPress={() => setShowAddModal(true)}>
+            <Text style={styles.buttonText}>Add membre</Text>
+          </TouchableOpacity>
+        }
+        {role == "USER" &&
+          <TouchableOpacity style={styles.leaveButton} onPress={() => setShowLeaveModal(true)}>
+            <Text style={styles.buttonText}>Leave group</Text>
+          </TouchableOpacity>
+        }
+        {/* Modal de confirmation de suppression */}
+        <Modal visible={showDeleteModal} transparent animationType="fade">
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalText}>Are you sure you want to delete this member?</Text>
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.cancelButton]}
+                  onPress={() => setShowDeleteModal(false)}
+                >
+                  <Text style={styles.modalButtonText}>Annuler</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.confirmButton]}
+                  onPress={() => {
+                    onDeleteMember(selectedMember);
+                    setShowDeleteModal(false);
+                  }}
+                >
+                  <Text style={styles.modalButtonText}>Confirmer</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+        {/* Modal de confirmation de quitter le groupe */}
+        <Modal visible={showLeaveModal} transparent animationType="fade">
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalText}>Are you sure you want to leave this groupe?</Text>
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.cancelButton]}
+                  onPress={() => setShowLeaveModal(false)}
+                >
+                  <Text style={styles.modalButtonText}>Annuler</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.confirmButton]}
+                  onPress={() => {
+                    onLeaveGroupe();
+                    setShowDeleteModal(false);
+                  }}
+                >
+                  <Text style={styles.modalButtonText}>Confirmer</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+        <Modal visible={showAddModal} transparent animationType="fade">
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Add membre</Text>
+              <FlatList
+                data={userToAdd}
+                renderItem={renderAvailableUser}
+                keyExtractor={(item) => item.id}
+                style={styles.availableUserList}
+              />
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton, { marginTop: 10 }]}
+                onPress={() => setShowAddModal(false)}
+              >
+                <Text style={styles.modalButtonText}>close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      </SafeAreaView>
     )
   }
 }
 
 
 export default GroupeDetails
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0f0f0',
+    padding: 20,
+    backgroundColor: '#f5f5f5',
   },
-  pageTitle: {
+  groupTitle: {
     fontSize: 24,
     fontWeight: 'bold',
+    marginBottom: 20,
     textAlign: 'center',
-    marginVertical: 20,
+    padding: 15
   },
-  valueText: {
-    fontSize: 15,
-    marginTop: 10,
-  },
-  bioContainer: {
-    padding: 15,
-  },
-  bioText: {
-    fontSize: 16,
-  },
-  nameText: {
-    fontSize: 15,
+  membreTitle: {
+    fontSize: 20,
     fontWeight: 'bold',
-    marginTop: 10,
+    marginBottom: 10,
+    textAlign: 'left',
+    padding: 5
   },
-  button: {
-    backgroundColor: '#0066cc',
-    borderRadius: 5,
+  memberList: {
+    flex: 1,
+  },
+  memberItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'white',
+    borderRadius: 10,
     padding: 10,
-    marginHorizontal: 60,
-    marginTop: 10
+    marginBottom: 10,
+    elevation: 2,
+  },
+  memberPhoto: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 10,
+  },
+  memberInfo: {
+    flex: 1,
+  },
+  memberName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  memberEmail: {
+    fontSize: 14,
+    color: 'gray',
+  },
+  deleteButton: {
+    padding: 5,
+  },
+  addButton: {
+    backgroundColor: '#4CAF50',
+    padding: 15,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginVertical: 10,
+    width: "60%",
+    alignSelf: "center"
+  },
+  leaveButton: {
+    backgroundColor: '#f44336',
+    padding: 15,
+    borderRadius: 5,
+    alignItems: 'center',
+    width: "60%",
+    alignSelf: "center",
+    marginBottom: 10
   },
   buttonText: {
-    fontSize: 16,
-    color: '#fff',
-    textAlign: 'center',
-  },
-  participantItem: {
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-    participantItem2: {
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  addParticipantButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 10,
-    marginTop: 10,
-  },
-  addParticipantText: {
-    marginLeft: 10,
-    color: 'blue',
-    fontSize: 16,
-  },
-  participantsTitle: {
-    fontSize: 20,
+    color: 'white',
     fontWeight: 'bold',
-    marginBottom: 10,
   },
-  description: {
-    fontSize: 16,
-    marginBottom: 20,
-  },
-  container: {
+  modalContainer: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 10,
     padding: 20,
-    backgroundColor: '#fff',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  date: {
-    fontSize: 18,
-    color: 'gray',
-    marginBottom: 10,
-  },
-  description: {
-    fontSize: 16,
-    marginBottom: 20,
-  },
-  participantsTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  participantItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  addParticipantButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 10,
-    marginTop: 10,
-  },
-  addParticipantText: {
-    marginLeft: 10,
-    color: 'blue',
-    fontSize: 16,
-  },
-  centeredView: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: 'rgba(0,0,0,0.5)',
-   
-  },
-  modalView: {
-    margin: 20,
-    backgroundColor: "white",
-    borderRadius: 20,
-    padding: 35,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5
-  },
-  modalViewParticipant: {
-    margin: 20,
-    backgroundColor: "white",
-    borderRadius: 20,
-    padding: 15,
-    width:"70%",
-    height:"70%",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5
-  },
-  button: {
-    borderRadius: 20,
-    padding: 10,
-    elevation: 2
-  },
-  buttonDelete: {
-    backgroundColor: "#FF0000",
-  },
-  buttonCancel: {
-    backgroundColor: "#2196F3",
-  },
-  textStyle: {
-    color: "white",
-    fontWeight: "bold",
-    textAlign: "center"
+    elevation: 5,
+    width: '90%',
+    maxHeight: '80%',
   },
   modalText: {
-    marginBottom: 15,
-    textAlign: "center"
+    fontSize: 18,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 20,
   },
   modalButtons: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%'
   },
-  userItem: {
-    padding: 5
+  modalButton: {
+    padding: 10,
+    borderRadius: 5,
+    minWidth: 100,
+    alignItems: 'center',
   },
-  buttonCancelModal: {
-    marginTop:15,
-    backgroundColor: "#2196F3",
+  cancelButton: {
+    backgroundColor: '#f44336',
+    marginRight: 10,
   },
-  titleModal:{
-    fontSize: 16,
-    marginBottom: 20,
-    textAlign: "center",
-     fontWeight: 'bold',
-  }
-})
+  confirmButton: {
+    backgroundColor: '#4CAF50',
+  },
+  modalButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  availableUserList: {
+    width: '100%',
+  },
+  availableUserItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#e0e0e0',
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 10,
+  },
+});

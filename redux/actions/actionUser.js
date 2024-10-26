@@ -48,3 +48,21 @@ export const UserUpdateProfil = (token, user) => {
         }
     }
 }
+export const UserDetails = (token, idUser) => {
+    return async (dispatch) => {
+        try {
+            const response = await fetch(`http://${ADRESSE_IP}:9002/user/get_user_details/${idUser}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            const data = await response.json();
+
+            dispatch({ type: 'SET_USER_PROFILE', payload: data });
+            return data; // Assurez-vous de retourner les données
+
+        } catch (error) {
+            console.log(error)
+        }
+    }
+}

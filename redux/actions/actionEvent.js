@@ -31,7 +31,8 @@ export const fetchEvents = (token,userId) => async (dispatch) => {
                 }
             });
     const events = await response.json();
-    dispatch({ type: 'FETCH_EVENTS_SUCCESS', payload: events });
+   // dispatch({ type: 'FETCH_EVENTS_SUCCESS', payload: events });
+    return events;
   } catch (error) {
     dispatch({ type: 'FETCH_EVENTS_FAILURE', payload: error.message });
   }
@@ -99,9 +100,6 @@ export const getPossibleUser = (token,idEvent) => async (dispatch) => {
 };
 export const addUserToEvent = (token,idEvent,idUser) => async (dispatch) => {
   try {
-    console.log('token: '+token);
-    console.log('idEvent: '+idEvent);
-    console.log("idUser: "+idUser);
     const response = await fetch(`http://${ADRESSE_IP}:9001/event/add_participant/${idEvent}/${idUser}`, {
                 method: 'POST',
                 headers: {
@@ -122,6 +120,39 @@ export const deleteUserFromEvent = (token,idEvent,idUser) => async (dispatch) =>
     console.log("idUser: "+idUser);
     const response = await fetch(`http://${ADRESSE_IP}:9001/event/${idEvent}/${idUser}`, {
                 method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'content-type': 'application/json'
+                }
+            });
+    return response;
+  } catch (error) {
+    console.log(error)
+  }
+};
+   
+export const fetchParticipantEvent = (token,userId) => async (dispatch) => {
+  try {
+    dispatch({ type: 'FETCH_EVENTS_START' });
+    const response = await fetch(`http://${ADRESSE_IP}:9001/event/get_event_by_participant/${userId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'content-type': 'application/json'
+                }
+            });
+    const events = await response.json();
+   //dispatch({ type: 'FETCH_EVENTS_SUCCESS', payload: events });
+    
+    return events;
+  } catch (error) {
+    dispatch({ type: 'FETCH_EVENTS_FAILURE', payload: error.message });
+  }
+};
+
+export const editAnswer = (token,idEvent,idUser,newAnswer) => async (dispatch) => {
+  try {
+    const response = await fetch(`http://${ADRESSE_IP}:9003/event_user/update_answer/${idEvent}/${idUser}/${newAnswer}`, {
+                method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'content-type': 'application/json'

@@ -64,25 +64,23 @@ export const actionLogin = (email, password) => {
                 password: password,
             })
         }
-        )
-         console.log("tests: "+response)
+        ) 
         if (!response.ok) {
-            console.log("test")
             const responseError = await response.json();
             const errorMsg = responseError.message;
             throw new Error(errorMsg);
         }
         const dataObj = await response.json();
         const token = dataObj.response.accessToken; // Remplace par le token récupéré
-        console.log("token: " + token)
         try {
             // Décoder le token JWT
             const decoded = decodeJWT(token);
-            console.log("decoded: " + decoded)
+            console.log("decoded: " + JSON.stringify(decoded))
             // Accéder au idUser (assume que le payload contient un champ `idUser`)
             const userId = decoded.userId;
             console.log('idUser récupéré à partir du token JWT :', userId);
-            saveToAsyncStorage(dataObj.response.accessToken, userId);
+            const userType= decoded.userType;
+            saveToAsyncStorage(dataObj.response.accessToken, userId,userType);
             dispatch(actionAuthUser(userId,dataObj.response.accessToken));
         } catch (error) {
             console.error('Erreur lors du décodage du token JWT', error);
@@ -93,12 +91,14 @@ export const actionLogin = (email, password) => {
 //enregister la data (token,userId,dateTokenExpiration)
 
 
-const saveToAsyncStorage = async (token, userId) => {
+const saveToAsyncStorage = async (token, userId,userType) => {
     let t = await AsyncStorage.setItem("userDetails", JSON.stringify({
         token: token,
         userId: userId,
+        role:userType
        // dateTokenExpired: dateTokenExpired
-    }))
+    }));
+    
 }
 // Auth action
 const decodeJWT = (token) => {

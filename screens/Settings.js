@@ -5,7 +5,7 @@ const Settings = () => {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.text}>Settings</Text>
+            <Text style={styles.text}>NOTIFICATIONS</Text>
         </View>
     )
 }

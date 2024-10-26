@@ -133,4 +133,20 @@ export const getPossibleUser = (token,idGroupe) => async (dispatch) => {
     console.log(error)
   }
 };
-///delete_membre/{idGroupe}/{idUser
+export const fetchMembreGroups = (token, idUser) => {
+    return async (dispatch) => {
+        try {
+            const response = await fetch(`http://${ADRESSE_IP}:9008/groupe/by_membre/${idUser}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'content-type': 'application/json'
+                }
+            });
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            
+            console.log(error)
+        }
+    }
+}

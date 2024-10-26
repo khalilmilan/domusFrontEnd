@@ -3,9 +3,10 @@ import { StyleSheet, Text, View, TouchableOpacity, Modal } from 'react-native'
 import { useNavigation } from '@react-navigation/native';
 import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { deleteGroupeById } from '../../redux/actions/actionGroupe';
+import { deleteSurveyById } from '../../redux/actions/actionSurvey';
+import { Formedate } from '../../.expo/utils/formatDate';
 
-const GroupeItem = ({groupe,index,token,role,loadListGroupe }) => {
+const SurveyItem = ({survey, index,token,load,role}) => {
   const navigation = useNavigation();
     const dispatch = useDispatch();
     const [visibleMenu, setVisibleMenu] = useState(null);
@@ -23,13 +24,13 @@ const GroupeItem = ({groupe,index,token,role,loadListGroupe }) => {
                             style={[styles.button, styles.buttonCancel]}
                             onPress={() => onEdit()}
                         >
-                            <Text style={styles.textStyle}>Modify</Text>
+                            <Text style={styles.textStyle}>Modifier</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={[styles.button, styles.buttonDelete]}
                             onPress={onDelete}
                         >
-                            <Text style={styles.textStyle}>Delete</Text>
+                            <Text style={styles.textStyle}>Supprimer</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -40,27 +41,31 @@ const GroupeItem = ({groupe,index,token,role,loadListGroupe }) => {
         <View style={[styles.itemContainer, index % 2 === 0 ? styles.evenItem : styles.oddItem]}>
             <TouchableOpacity
                 style={styles.eventContent}
-                onPress={() => navigation.navigate('GroupeDetails', { idGroupe: groupe.idGroupe, loadListGroupe:loadListGroupe })}
+                 onPress={() => navigation.navigate('SurveyDetails', { idSurvey: survey.idSurvey })}
                 >
-                <Text style={styles.eventTitle}>{groupe.label}</Text>
-                <Text style={styles.creator}>{`Created by : ${groupe.user.firstName} ${groupe.user.lastName}`}</Text>
-                <Text style={styles.creator}>{`Members : (${groupe.membres.length})`}</Text>
+                <Text style={styles.eventTitle}>{survey.title}</Text>
+                <Text style={styles.creator}> Groupe : {survey.groupe.label} </Text>
+                <Text style={styles.creator}> from : {Formedate(survey.startDate)} to  {Formedate(survey.endDate)}</Text>
             </TouchableOpacity>
-            
-            {role=="ADMIN"&&<TouchableOpacity onPress={() => setVisibleMenu(groupe.idGroupe)}>
+            {role=="ADMIN"&&<TouchableOpacity onPress={() => setVisibleMenu(survey.idSurvey)}>
                 <MaterialIcons name="more-vert" size={24} color="gray" />
             </TouchableOpacity>}
             <OptionMenu
-                visible={visibleMenu === groupe.idGroupe}
+                visible={visibleMenu === survey.idSurvey}
                 onDismiss={() => setVisibleMenu(null)}
                 onEdit={() => {
-                    navigation.navigate('UpdateGroupe', { idGroupe: groupe.idGroupe,loadList: loadListGroupe})
+                    navigation.navigate('UpdateSurvey', { idSurvey: survey.idSurvey,loadList:load })
                     setVisibleMenu(null);
                 }}
                 onDelete={async() => {
-                    const result = await dispatch(deleteGroupeById(token, groupe.idGroupe));
-                    loadListGroupe()
-                    setVisibleMenu(null);
+                    try{
+                    const result = await dispatch(deleteSurveyById(token, survey.idSurvey));
+                    load()
+                    setVisibleMenu(null);     
+                    }catch(error){
+                        console.log(error)
+                    }
+                    
                 }}
             />
         </View>
@@ -173,6 +178,4 @@ textStyle: {
   },
 
 });
-
-export default GroupeItem
-
+export default SurveyItem

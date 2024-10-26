@@ -17,7 +17,7 @@ const BottomTabNav = () => {
                         iconName = 'home';
                         size = focused ? 30 : 20;
                     } else if (route.name === 'Settings') {
-                        iconName = 'settings';
+                        iconName = 'notifications-active';
                         size = focused ? 30 : 20;
                     }
                     return <MaterialIcons name={iconName} size={size} color={color} />

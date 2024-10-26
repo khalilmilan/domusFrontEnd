@@ -4,13 +4,17 @@ import { useDispatch } from 'react-redux';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { addEvent } from '../../redux/actions/actionEvent';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { MaterialIcons } from '@expo/vector-icons';
+import { Formedate } from '../../.expo/utils/formatDate';
 
-const AddEvent = ({navigation,routes}) => {
+const AddEvent = ({ navigation, route }) => {
     const [label, setLabel] = useState('');
     const [show, setShow] = useState(false);
     const [date, setDate] = useState(new Date());
-    const [description, setDescription] = useState('')
-    const handleSubmit = async() => {
+    const [description, setDescription] = useState('');
+    const [showDatePicker, setShowDatePicker] = useState(false);
+    let loadList = route.params.loadList
+    const handleSubmit = async () => {
         try {
             // Créer l'objet avec les données mises à jour    
             try {
@@ -26,6 +30,7 @@ const AddEvent = ({navigation,routes}) => {
                         date
                     };
                     const uiUpdate = await dispatch(addEvent(token, eventUpdate));
+                    loadList()
                     navigation.navigate('Listes')
                     // Faites quelque chose avec profileData ici
                 } else {
@@ -34,138 +39,155 @@ const AddEvent = ({navigation,routes}) => {
             } catch (error) {
                 console.error("Error in load function:", error);
             }
-
         } catch (error) {
             console.error(error);
             Alert.alert('Erreur', 'Impossible de mettre à jour le profil');
         }
     };
-
+    const dispatch = useDispatch();
     const showDatepicker = () => {
         setShow(true);
     };
-    const onChange = (event, selectedDate) => {
+    const onDateChange = (event, selectedDate) => {
         const currentDate = selectedDate || date;
-        setShow(Platform.OS === 'ios');
+        setShowDatePicker(false);
         setDate(currentDate);
     };
-    const dispatch = useDispatch();
+    const isFormValid = label && description ;
     return (
         <View style={styles.container}>
-            <TextInput
-                style={styles.input}
-                placeholder="label"
-                value={label}
-                onChangeText={setLabel}
-            />
-            <TextInput
-                style={styles.input}
-                placeholder="description"
-                multiline={true}
-                numberOfLines={4}
-                value={description}
-                onChangeText={setDescription}
-            />
-            <View style={styles.containerDate}>
-                <View style={styles.dateContainer}>
-                    <Text>Date : </Text>
-                    <TouchableOpacity onPress={showDatepicker} style={styles.button}>
-                        <Text style={styles.buttonText}>Choisir une date</Text>
-                    </TouchableOpacity>
-                </View>
-                {show && (
-                    <DateTimePicker
-                        testID="dateTimePicker"
-                        value={new Date(date)} 
-                        mode={'date'}
-                        is24Hour={true}
-                        display="default"
-                        onChange={onChange}
+            <Text style={styles.pageTitle}>Add Event</Text>
+            <View style={styles.fieldset}>
+                <Text style={styles.legend}>Event Details </Text>
+                <View style={styles.field}>
+                    <Text style={styles.labelText}>Label</Text>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Entrez un label"
+                        value={label}
+                        onChangeText={setLabel}
+                        placeholderTextColor="#888"
                     />
-                )}
+                </View>
+                <View style={styles.field}>
+                    <Text style={styles.labelText}>Description</Text>
+                    <TextInput
+                        style={[styles.input, styles.textarea]}
+                        placeholder="Entrez une description"
+                        value={description}
+                        onChangeText={setDescription}
+                        multiline={true}
+                        numberOfLines={4}
+                        placeholderTextColor="#888"
+                    />
+                </View>
+                <View style={styles.field}>
+                    <Text style={styles.labelText}>Date</Text>
+                    <TouchableOpacity
+                        onPress={() => setShowDatePicker(true)}
+                        style={styles.datePickerButton}
+                    >
+                        <MaterialIcons name="date-range" size={24} color="#007bff" />
+                        <Text style={styles.dateText}>{Formedate(date)}</Text>
+                    </TouchableOpacity>
+                    {showDatePicker && (
+                        <DateTimePicker
+                            value={date}
+                            mode="date"
+                            display="default"
+                            onChange={onDateChange}
+                            style={styles.datePicker}
+                        />
+                    )}
+                </View>
             </View>
-
-            <Button title="Add Event" onPress={handleSubmit} />
+            <TouchableOpacity style={styles.submitButton} 
+            onPress={handleSubmit}
+            disabled={!isFormValid}
+            >
+                <Text style={styles.submitButtonText}>Add Event</Text>
+            </TouchableOpacity>
         </View>
     );
 }
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
+        margin: 20,
         padding: 20,
+        borderRadius: 10,
+        backgroundColor: '#f4f6f9', // Couleur douce pour le fond
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
     },
-    photoContainer: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
-        backgroundColor: '#ddd',
-        justifyContent: 'center',
-        alignItems: 'center',
-        alignSelf: 'center',
+    pageTitle: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        marginBottom: 20,
+        textAlign: 'center',
+        color: '#333',
+    },
+    fieldset: {
+        padding: 15,
+        borderColor: '#007bff', // Bordure bleue
+        borderWidth: 1,
+        borderRadius: 10,
+        marginBottom: 20,
+        backgroundColor: '#fff',
+    },
+    legend: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 15,
+        color: '#007bff',
+    },
+    field: {
         marginBottom: 20,
     },
-    photo: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
+    labelText: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginBottom: 5,
+        color: '#333',
     },
     input: {
+        height: 40,
+        borderColor: '#ccc',
         borderWidth: 1,
-        borderColor: '#ddd',
-        padding: 10,
-        marginBottom: 10,
+        paddingHorizontal: 10,
         borderRadius: 5,
+        backgroundColor: '#e9ecef', // Légèrement coloré pour les champs
+        color: '#333', // Texte dans les champs
     },
-    containerDate: {
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 20,
+    textarea: {
+        height: 100,
+        textAlignVertical: 'top',
     },
-    dateContainer: {
+    datePickerButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        width: '100%',
-    },
-    button: {
-        backgroundColor: '#007AFF',
-        padding: 10,
-        borderRadius: 5,
-    },
-    buttonText: {
-        color: 'white',
-        fontSize: 16,
+        paddingVertical: 10,
     },
     dateText: {
-        fontSize: 16,
         marginLeft: 10,
+        fontSize: 16,
+        color: '#333', // Couleur du texte de la date
     },
-    title: {
-        fontSize: 18,
-        marginBottom: 10,
+    datePicker: {
+        marginTop: 20, // Corrige la position du DatePicker
     },
-    radioContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 10,
-    },
-    radioButton: {
-        height: 20,
-        width: 20,
-        borderRadius: 10,
-        borderWidth: 2,
-        borderColor: '#000',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: 10,
-    },
-    radioButtonSelected: {
-        height: 10,
-        width: 10,
+    submitButton: {
+        backgroundColor: '#007bff',
+        padding: 15,
         borderRadius: 5,
-        backgroundColor: '#000',
+        alignItems: 'center',
+        marginTop: 10,
     },
-    radioText: {
+    submitButtonText: {
+        color: '#fff',
+        fontWeight: 'bold',
         fontSize: 16,
     },
 });

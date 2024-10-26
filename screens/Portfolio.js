@@ -1,29 +1,50 @@
 import React, { useContext, useEffect, useState } from 'react'
 import { StyleSheet, Text, View, ActivityIndicator, TouchableOpacity, Image, ScrollView } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { UserProfil } from '../redux/actions/actionUser';
+import { UserDetails, UserProfil } from '../redux/actions/actionUser';
 import { useDispatch } from 'react-redux';
 import { format, parseISO } from 'date-fns';
-import { ProfileContext } from '../redux/ProfileProvider';
 const Portfolio = ({ navigation, route }) => {
-    const { profileData, updateProfile } = useContext(ProfileContext);
+
     const [loading, setLoading] = useState(true);
-    const [userId, setUserId] = useState(null);
     const [token, setToken] = useState(null);
+    const [profilData,setProfilData]=useState()
     const dispatch = useDispatch();
     const handleEditPress = () => {
-        navigation.navigate("profilUpdate", { profilData: profileData });
+        navigation.navigate("profilUpdate", { profilData: profilData, loadProfil:load });
     }
-    /* const load = async () => {
+    const [firstName, setFirstName] = useState("");
+    const [lastName, setLastName] = useState('');
+    const [email, setEmail] = useState('');
+    const [photo, setPhoto] = useState('');
+    const [adresse, setAdress] = useState('');
+    const [birthDate, setBirthDate] = useState('');
+    const [gender, setGender] = useState('');
+    const [phoneNumber, setPhoneNumber] = useState('');
+    const [projectCount,setProjectCount] = useState();
+    const [surveyCount,setSurveyCount] = useState();
+    const [eventCount,setEventCount] = useState();
+     const load = async () => {
          try {
              let userDetails = await AsyncStorage.getItem("userDetails");
-             console.log("userDetails from AsyncStorage:", userDetails);
              if (userDetails != null) {
                  let user = JSON.parse(userDetails);
-                 let token = user.token;
+                 let tokens = user.token;
                  let idUser = user.userId;
-                 const result = await dispatch(UserProfil(token, idUser));
-                 setProfileData(result);
+                 setToken(tokens)
+                 const result = await dispatch(UserDetails(tokens, idUser));
+                 setProfilData(result.user)
+                 setFirstName(result.user.firstName);
+                 setLastName(result.user.lastName);
+                 setEmail(result.user.email)
+                 setBirthDate(result.user.birthDate)
+                 setPhoto(result.user.photo)
+                 setGender(result.user.gender)
+                 setAdress(result.user.adresse)
+                 setPhoneNumber(result.user.phoneNumber)
+                 setProjectCount(result.countProject);
+                 setSurveyCount(result.countSurvey);
+                 setEventCount(result.countEvent);
                  // Faites quelque chose avec profileData ici
              } else {
                  console.log("No user details found in AsyncStorage");
@@ -36,65 +57,12 @@ const Portfolio = ({ navigation, route }) => {
      }
      useEffect(() => {
          load();
-     }, [])*/
-    useEffect(() => {
-        // Fonction pour récupérer l'ID de l'utilisateur depuis AsyncStorage
-        const getUserIdFromStorage = async () => {
-            try {
-                let userDetails = await AsyncStorage.getItem("userDetails");  // Récupère l'ID du stockage
-                let user = JSON.parse(userDetails);
-                setToken(user.token);
-                let idUser = user.userId;
-                if (idUser) {
-                    setUserId(idUser);  // Met à jour l'état avec l'ID récupéré
-                }
-            } catch (error) {
-                console.error('Erreur lors de la récupération de l\'ID', error);
-            }
-        };
-        getUserIdFromStorage();  // Appelle la fonction pour récupérer l'ID
-    }, []);
-    useEffect(() => {
-        // Charger les données du profil une fois l'ID récupéré
-        const fetchProfileData = async () => {
-            try {
-                if (userId) {
-                    // Requête pour obtenir les données du profil avec l'ID récupéré
-
-                    let test = await dispatch(UserProfil(token, userId)).then(result => {
-                        updateProfile(result);
-                        setLoading(false);
-                    });
-                    // Met à jour les données du profil
-                }
-            } catch (error) {
-                console.error('Erreur lors du chargement des données de profil', error);
-            } finally {
-                // setLoading(false);  // Arrête l'indicateur de chargement
-            }
-        };
-
-        if (userId) {
-            fetchProfileData();  // Charger les données seulement si l'ID est présent
-        }
-    }, [userId]);
-    const [firstName, setFirstName] = useState(profileData ? profileData.firstName : "");
-    const [lastName, setLastName] = useState(profileData ? profileData.lastName : '');
-    const [email, setEmail] = useState(profileData ? profileData.email : '');
-    const [photo, setPhoto] = useState(profileData ? profileData.photo : '');
-    const [adresse, setAdress] = useState(profileData ? profileData.adresse : '');
-    const [birthDate, setBirthDate] = useState(profileData ? profileData.birthDate : '');
-    const [gender, setGender] = useState(profileData ? profileData.gender : '');
-    const [phoneNumber, setPhoneNumber] = useState(profileData ? profileData.phoneNumber : '');
-
+     }, [token])
     const formatBirthdate = (dateString) => {
         if (!dateString) return ''; // Gérer le cas où dateString est undefined ou null
         const date = parseISO(dateString);
         return format(date, 'dd-MM-yyyy');
     };
-    useEffect(() => {
-        setLoading(false)
-    }, [profileData])
     if (loading) {
         return (<ActivityIndicator size="large" color="#0000ff" />);  // Afficher un indicateur de chargement
     }
@@ -104,12 +72,18 @@ const Portfolio = ({ navigation, route }) => {
                 <View style={styles.headerContainer}>
                     <Image
                         style={styles.coverPhoto}
-                        source={{ uri: 'https://www.bootdey.com/image/280x280/1E90FF/1E90FF' }}
+                        source={require('../assets/forum-domus-logo_couverture.png')}
                     />
                     <View style={styles.profileContainer}>
                         <Image
                             style={styles.profilePhoto}
-                            source={photo ? { uri: photo } : require('../assets/avatar1.png')}
+                            source={
+                                photo
+                                ? { uri: photo }
+                                : gender === 'MALE'
+                                ? require('../assets/avatar0.png')
+                                : require('../assets/avatar2.png')
+                            }
                         />
                         <Text style={styles.nameText}>{firstName} {lastName}</Text>
                     </View>
@@ -141,16 +115,16 @@ const Portfolio = ({ navigation, route }) => {
                 </View>
                 <View style={styles.statsContainer}>
                     <View style={styles.statContainer}>
-                        <Text style={styles.statCount}>1234</Text>
-                        <Text style={styles.statLabel}>Posts</Text>
+                        <Text style={styles.statCount}>{projectCount}</Text>
+                        <Text style={styles.statLabel}>Projects</Text>
                     </View>
                     <View style={styles.statContainer}>
-                        <Text style={styles.statCount}>5678</Text>
-                        <Text style={styles.statLabel}>Followers</Text>
+                        <Text style={styles.statCount}>{eventCount}</Text>
+                        <Text style={styles.statLabel}>Events</Text>
                     </View>
                     <View style={styles.statContainer}>
-                        <Text style={styles.statCount}>9101</Text>
-                        <Text style={styles.statLabel}>Following</Text>
+                        <Text style={styles.statCount}>{surveyCount}</Text>
+                        <Text style={styles.statLabel}>surveys</Text>
                     </View>
                 </View>
                 <TouchableOpacity style={styles.button} onPress={handleEditPress}>
@@ -185,10 +159,11 @@ const styles = StyleSheet.create({
     coverPhoto: {
         width: '100%',
         height: 200,
+        marginTop: -30,
     },
     profileContainer: {
         alignItems: 'center',
-        marginTop: -50,
+        marginTop: -30,
     },
     profilePhoto: {
         width: 100,

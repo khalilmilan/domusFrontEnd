@@ -23,6 +23,16 @@ import ProjectDetails from '../screens/project/ProjectDetails';
 import AddTicket from '../screens/ticket/AddTicket';
 import UpdateTicket from '../screens/ticket/UpdateTicket';
 import TicketDetails from '../screens/ticket/TicketDetails';
+import AddSurvey from '../screens/survey/AddSurvey';
+import UpdateSurvey from '../screens/survey/UpdateSurvey';
+import SurveyDetails from '../screens/survey/SurveyDetails';
+import SondageDetails from '../screens/survey/SondageDetails';
+import AddSurveyValue from '../screens/surveyValue/AddSurveyValue';
+import UpdateSurveyValue from '../screens/surveyValue/UpdateSurveyValue';
+import ProjectDetailsPage from '../screens/project/ProjectDetailsPage';
+import GroupePage from '../screens/group/GroupePage';
+import EventsPage from '../screens/event/EventsPage';
+import Discussions from '../screens/Discussions';
 
 const HomeStack = createStackNavigator();
 
@@ -44,8 +54,8 @@ const HomeStackScreen = ({ navigation }) => {
             <HomeStack.Screen name="Profil" component={Portfolio} />
             <HomeStack.Screen name="Listes" component={Listes} options={{ title: "Events" }} />
             <HomeStack.Screen name="Sujets" component={Sujets} options={{ title: "Groups" }}/>
-            <HomeStack.Screen name="Signets" component={Signets} />
-            <HomeStack.Screen name="Moments" component={Moments} />
+            <HomeStack.Screen name="Signets" component={Signets} options={{ title: "Projects" }}/>
+            <HomeStack.Screen name="Moments" component={Moments} options={{ title: "Surveys" }}/>
             <HomeStack.Screen name="profilUpdate" component={ProfilUpdate} />
             <HomeStack.Screen name="EventDetails" component={EventDetails} />
             <HomeStack.Screen name="AddEvent" component={AddEvent} options={{ title: "Add Event" }} />
@@ -62,7 +72,17 @@ const HomeStackScreen = ({ navigation }) => {
             <HomeStack.Screen name="AddTicket" component={AddTicket} options={{ title: "Add Ticket" }} />
             <HomeStack.Screen name="UpdateTicket" component={UpdateTicket} options={{ title: "Update Ticket" }} />
             <HomeStack.Screen name="TicketDetails" component={TicketDetails} options={{ title: "Ticket Details" }} />
-            
+            <HomeStack.Screen name="AddSurvey" component={AddSurvey} options={{ title: "Add Survey" }} />
+            <HomeStack.Screen name='UpdateSurvey' component={UpdateSurvey} options={{title:"Update Survey"}}/>
+            <HomeStack.Screen name="SurveyDetails" component={SurveyDetails} option={{title: "Survey Details"}}/>
+            <HomeStack.Screen name="SondageDetails" component={SondageDetails} option={{title: "sondage Details"}}/>
+            <HomeStack.Screen name="AddSurveyValue" component={AddSurveyValue} option={{title: " Add Survey value"}}/>
+            <HomeStack.Screen name="ProjectDetailsPage" component={ProjectDetailsPage} option={{title: "project details"}}/>
+            <HomeStack.Screen name="GroupePage" component={GroupePage} option={{title: "groupe page"}}/>
+            <HomeStack.Screen name="UpdateSurveyValue" component={UpdateSurveyValue} option={{title: "Update Survey Value"}}/>
+            <HomeStack.Screen name="EventsPage" component={EventsPage} option={{title: "EventsPage"}}/>
+            <HomeStack.Screen name="Discussions" component={Discussions} option={{title: "Discussions"}}/>
+        
         </HomeStack.Navigator>
     )
 }

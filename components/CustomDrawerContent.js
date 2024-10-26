@@ -2,6 +2,7 @@ import { DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
 import React, { useState,useLayoutEffect } from 'react'
 import { StyleSheet, View } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useDispatch } from 'react-redux';
 
 import { 
     Text, 
@@ -14,23 +15,39 @@ import {
     Switch
 } from 'react-native-paper';
 import { MaterialIcons } from '@expo/vector-icons'; 
+import { UserProfil } from '../redux/actions/actionUser';
 
 const CustomDrawerContent = (props) => {
 
     const [isDark, setIsDark] = useState(false);
-    const [name, setName] = useState('');
-    const [firstName, setFirstName] = useState('');
-
+    const [token, setToken] = useState('');
+    const [firstName, setFirstName] = useState("");
+    const [lastName, setLastName] = useState('');
+    const [email, setEmail] = useState('');
+    const [role, setRole] = useState('');
+    const [photo,setPhoto] = useState();
+    const [user,setUser] = useState();
+    const [gender,setGender] = useState();
     const toggleDarkTheme = () => {
         setIsDark(!isDark)
     }
+    const dispatch = useDispatch();
     const load = async()=>{
        try {
-        let userDetails = await AsyncStorage.getItem("user");
-        if(userDetails !=null){
+        let userDetails = await AsyncStorage.getItem("userDetails");
+        if (userDetails != null) {
             let user = JSON.parse(userDetails);
-           setName(user.name);
-           setFirstName(user.firstName)
+                 let tokens = user.token;
+                 let idUser = user.userId;
+                 const result = await dispatch(UserProfil(tokens, idUser));
+                 setUser(result)
+                 setToken(tokens)
+                 setFirstName(result.firstName);
+                 setLastName(result.lastName);
+                 setEmail(result.email);
+                 setRole(result.role);
+                 setPhoto(result.photo)
+                 setGender(result.gender);
         }
        } catch (error) {
         alert(error)
@@ -38,20 +55,27 @@ const CustomDrawerContent = (props) => {
     }
     useLayoutEffect(()=>{
         load();
-    },[])
+    },[token])
     return (
         <View style={styles.container}>
             <DrawerContentScrollView {...props}>
                 <View style={styles.drawerContentContainer}>
-                    <View style={styles.userInfoContainer}>
+                    {user &&<View style={styles.userInfoContainer}>
                         <View style={styles.userInfoDetails}>
                             <Avatar.Image
-                                source={{uri: 'https://pbs.twimg.com/profile_images/1377945951978061827/E8hmHwUv_400x400.jpg'}}
+                               // source={{uri: 'https://pbs.twimg.com/profile_images/1377945951978061827/E8hmHwUv_400x400.jpg'}}
+                                 source={
+                                photo
+                                ? { uri: photo }
+                                : gender === 'MALE'
+                                ? require('../assets/avatar0.png')
+                                : require('../assets/avatar2.png')
+                            }
                                 size={90}
                             />
                             <View style={styles.name}>
-                                <Title style={styles.title}>{name} {firstName}</Title>
-                                <Caption style={styles.caption}>@{name}</Caption>
+                                <Title style={styles.title}> {firstName} {lastName}</Title>
+                                <Caption style={styles.caption}>{email}</Caption>
                             </View>
                         </View>
 
@@ -65,7 +89,7 @@ const CustomDrawerContent = (props) => {
                                 <Caption style={styles.caption}>Abonnés</Caption>
                             </View>
                         </View>
-                    </View>
+                    </View>}
 
                     <Drawer.Section style={styles.drawerSection}>
                         <DrawerItem 
@@ -91,9 +115,14 @@ const CustomDrawerContent = (props) => {
                             onPress={() => props.navigation.navigate('Signets') }
                         />
                         <DrawerItem 
-                            label="Moments"
-                            icon={({color, size}) => <MaterialIcons name="flash-on" size={size} color={color} />}
+                            label="Surveys"
+                            icon={({color, size}) => <MaterialIcons name="poll" size={size} color={color} />}
                             onPress={() => props.navigation.navigate('Moments') }
+                        />
+                        <DrawerItem 
+                            label="Discussions"
+                            icon={({color, size}) => <MaterialIcons name="message" size={size} color={color} />}
+                            onPress={() => props.navigation.navigate('Discussions') }
                         />
                     </Drawer.Section>
 
@@ -103,14 +132,18 @@ const CustomDrawerContent = (props) => {
                             icon={({color, size}) => <MaterialIcons name="settings" size={size} color={color} />}
                             onPress={() => props.navigation.navigate('Settings') }
                         />
-
                         <TouchableRipple
                             onPress={() => toggleDarkTheme()}
                         >
                             <View style={styles.settings}>
                                 <Text>Mode sombre</Text>
                                 <View pointerEvents="none">
-                                    <Switch value={isDark} />
+                                    <Switch 
+                                    trackColor={{ false: '#767577', true: '#81b0ff' }}
+                                    thumbColor={isDark ? '#f5dd4b' : '#f4f3f4'}
+                                    onValueChange={toggleDarkTheme}
+                                    value={isDark} 
+                                    />
                                 </View>
                             </View>
                         </TouchableRipple>

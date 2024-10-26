@@ -1,69 +1,42 @@
 import { StyleSheet, Text, View, Platform, TextInput, TouchableOpacity, Button } from 'react-native'
-import React, { useState,useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { fetchEvent, updateEvent } from '../../redux/actions/actionEvent';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { format,parseISO, isValid } from 'date-fns';
+import { Formedate } from '../../.expo/utils/formatDate';
+import { MaterialIcons } from '@expo/vector-icons';
 
-const EventUpdate = ({navigation,route}) => {
+const EventUpdate = ({ navigation, route }) => {
     const [label, setLabel] = useState('');
     const [show, setShow] = useState(false);
     const [date, setDate] = useState(new Date());
     const [description, setDescription] = useState('')
+    const [showDatePicker, setShowDatePicker] = useState(false);
     let idEvent = route.params.eventId
-    const formedate = (date) => {
-        if (!date) return ''; // Gérer le cas où date est undefined ou null
-        let parsedDate;
-        if (typeof date === 'string') {    
-            // Parser la date au format "1991-08-04 02:25:00.000000"
-             const parsedDate1 = parseISO(date);
-             return  format(parsedDate1, 'dd-MM-yyyy');
-            
-        } else if (date instanceof Date) {
-             
-            // Si c'est déjà un objet Date, on l'utilise directement
-            parsedDate = date;
-        } else {
-            
-            // Si ce n'est ni une chaîne ni un objet Date, on retourne une chaîne vide
-            return '';
-        }
-
-        // Vérifier si la date est valide
-        if (!isValid(parsedDate)) {
-              c
-            return '';
-        }
-
-        // Formater la date
-        return format(parsedDate, 'dd-MM-yyyy');
-    };
     const load = async () => {
-    try {
-      let userDetails = await AsyncStorage.getItem("userDetails");
-      console.log("userDetails from AsyncStorage:", userDetails);
-      if (userDetails != null) {
-        let user = JSON.parse(userDetails);
-        let token = user.token;
-        const result = await dispatch(fetchEvent(token, idEvent));
-        setLabel(result.label)
-        setDescription(result.description)
-        setDate(result.date)
-        // Faites quelque chose avec profileData ici
-      } else {
-        console.log("No user details found in AsyncStorage");
-      }
-    } catch (error) {
-      console.error("Error in load function:", error);
-    } finally {
-      setLoading(false);
+        try {
+            let userDetails = await AsyncStorage.getItem("userDetails");
+            if (userDetails != null) {
+                let user = JSON.parse(userDetails);
+                let token = user.token;
+                const result = await dispatch(fetchEvent(token, idEvent));
+                setLabel(result.label)
+                setDescription(result.description)
+                setDate(new Date(result.date))
+            } else {
+                console.log("No user details found in AsyncStorage");
+            }
+        } catch (error) {
+            console.error("Error in load function:", error);
+        } finally {
+            setLoading(false);
+        }
     }
-  }
-  useEffect(() => {
-    load();
-  }, [])
-    const handleSubmit = async() => {
+    useEffect(() => {
+        load();
+    }, [])
+    const handleSubmit = async () => {
         try {
             // Créer l'objet avec les données mises à jour    
             try {
@@ -78,7 +51,7 @@ const EventUpdate = ({navigation,route}) => {
                         date
                     };
                     const result = await dispatch(updateEvent(token, eventUpdate));
-                   // setEvent(result);
+                    // setEvent(result);
                     // Faites quelque chose avec profileData ici
                 } else {
                     console.log("No user details found in AsyncStorage");
@@ -94,129 +67,147 @@ const EventUpdate = ({navigation,route}) => {
     const showDatepicker = () => {
         setShow(true);
     };
-    const onChange = (event, selectedDate) => {
+    const onDateChange = (event, selectedDate) => {
         const currentDate = selectedDate || date;
-        setShow(Platform.OS === 'ios');
+        setShowDatePicker(false);
         setDate(currentDate);
-        console.log('date: '+currentDate)
     };
     const dispatch = useDispatch();
+    const isFormValid = label && description ;
     return (
         <View style={styles.container}>
-            <TextInput
-                style={styles.input}
-                placeholder="label"
-                value={label}
-                onChangeText={setLabel}
-            />
-            <TextInput
-                style={styles.input}
-                placeholder="description"
-                multiline={true}
-                numberOfLines={4}
-                value={description}
-                onChangeText={setDescription}
-            />
-            <View style={styles.containerDate}>
-                <View style={styles.dateContainer}>
-                    <Text>Date : {formedate(date)}</Text> 
-                    <TouchableOpacity onPress={showDatepicker} style={styles.button}>
-                        <Text style={styles.buttonText}>Choisir une date</Text>
-                    </TouchableOpacity>
-                </View>
-                {show && (
-                    <DateTimePicker
-                        testID="dateTimePicker"
-                        value={new Date(date)} 
-                        mode={'date'}
-                        is24Hour={true}
-                        display="default"
-                        onChange={onChange}
+            <Text style={styles.pageTitle}>Update Event</Text>
+            <View style={styles.fieldset}>
+                <Text style={styles.legend}>Event Détails </Text>
+                <View style={styles.field}>
+                    <Text style={styles.labelText}>Label</Text>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Entrez un label"
+                        value={label}
+                        onChangeText={setLabel}
+                        placeholderTextColor="#888"
                     />
-                )}
+                </View>
+                <View style={styles.field}>
+                    <Text style={styles.labelText}>Description</Text>
+                    <TextInput
+                        style={[styles.input, styles.textarea]}
+                        placeholder="Entrez une description"
+                        value={description}
+                        onChangeText={setDescription}
+                        multiline={true}
+                        numberOfLines={4}
+                        placeholderTextColor="#888"
+                    />
+                </View>
+                <View style={styles.field}>
+                    <Text style={styles.labelText}>Date</Text>
+                    <TouchableOpacity
+                        onPress={() => setShowDatePicker(true)}
+                        style={styles.datePickerButton}
+                    >
+                        <MaterialIcons name="date-range" size={24} color="#007bff" />
+                        <Text style={styles.dateText}>{Formedate(date)}</Text>
+                    </TouchableOpacity>
+                    {showDatePicker && (
+                        <DateTimePicker
+                            value={date}
+                            mode="date"
+                            display="default"
+                            onChange={onDateChange}
+                            style={styles.datePicker}
+                        />
+                    )}
+                </View>
             </View>
-
-            <Button title="Update Event" onPress={handleSubmit} />
+            <TouchableOpacity style={styles.submitButton} 
+            onPress={handleSubmit}
+            disabled={!isFormValid}
+            >
+                <Text style={styles.submitButtonText}>Update Event</Text>
+            </TouchableOpacity>
         </View>
     );
 }
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
+        margin: 20,
         padding: 20,
+        borderRadius: 10,
+        backgroundColor: '#f4f6f9', // Couleur douce pour le fond
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
     },
-    photoContainer: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
-        backgroundColor: '#ddd',
-        justifyContent: 'center',
-        alignItems: 'center',
-        alignSelf: 'center',
+    pageTitle: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        marginBottom: 20,
+        textAlign: 'center',
+        color: '#333',
+    },
+    fieldset: {
+        padding: 15,
+        borderColor: '#007bff', // Bordure bleue
+        borderWidth: 1,
+        borderRadius: 10,
+        marginBottom: 20,
+        backgroundColor: '#fff',
+    },
+    legend: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 15,
+        color: '#007bff',
+    },
+    field: {
         marginBottom: 20,
     },
-    photo: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
+    labelText: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginBottom: 5,
+        color: '#333',
     },
     input: {
+        height: 40,
+        borderColor: '#ccc',
         borderWidth: 1,
-        borderColor: '#ddd',
-        padding: 10,
-        marginBottom: 10,
+        paddingHorizontal: 10,
         borderRadius: 5,
+        backgroundColor: '#e9ecef', // Légèrement coloré pour les champs
+        color: '#333', // Texte dans les champs
     },
-    containerDate: {
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 20,
+    textarea: {
+        height: 100,
+        textAlignVertical: 'top',
     },
-    dateContainer: {
+    datePickerButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        width: '100%',
-    },
-    button: {
-        backgroundColor: '#007AFF',
-        padding: 10,
-        borderRadius: 5,
-    },
-    buttonText: {
-        color: 'white',
-        fontSize: 16,
+        paddingVertical: 10,
     },
     dateText: {
-        fontSize: 16,
         marginLeft: 10,
+        fontSize: 16,
+        color: '#333', // Couleur du texte de la date
     },
-    title: {
-        fontSize: 18,
-        marginBottom: 10,
+    datePicker: {
+        marginTop: 20, // Corrige la position du DatePicker
     },
-    radioContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 10,
-    },
-    radioButton: {
-        height: 20,
-        width: 20,
-        borderRadius: 10,
-        borderWidth: 2,
-        borderColor: '#000',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: 10,
-    },
-    radioButtonSelected: {
-        height: 10,
-        width: 10,
+    submitButton: {
+        backgroundColor: '#007bff',
+        padding: 15,
         borderRadius: 5,
-        backgroundColor: '#000',
+        alignItems: 'center',
+        marginTop: 10,
     },
-    radioText: {
+    submitButtonText: {
+        color: '#fff',
+        fontWeight: 'bold',
         fontSize: 16,
     },
 });

@@ -8,14 +8,10 @@ import { useDispatch } from 'react-redux';
 import { deleteEvent } from '../../redux/actions/actionEvent';
 
 
-const EventItem = ({ event, index,token }) => {
+const EventItem = ({event,index,token,role,loadList }) => {
     const navigation = useNavigation();
     const dispatch = useDispatch();
     const [visibleMenu, setVisibleMenu] = useState(null);
-    const confirmDelete = (eventId) => {
-        // Implémentez ici la logique de confirmation de suppression
-        console.log('Confirming delete for event:', eventId);
-    };
     const formatDate = (dateString) => {
         if (!dateString) return ''; // Gérer le cas où dateString est undefined ou null
         const date = parseISO(dateString);
@@ -58,9 +54,9 @@ const EventItem = ({ event, index,token }) => {
                 <Text style={styles.creator}>{`Created by : ${event.user.firstName} ${event.user.lastName}`}</Text>
 
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => setVisibleMenu(event.idEvent)}>
+            {role=="ADMIN"&&<TouchableOpacity onPress={() => setVisibleMenu(event.idEvent)}>
                 <MaterialIcons name="more-vert" size={24} color="gray" />
-            </TouchableOpacity>
+            </TouchableOpacity>}
             <OptionMenu
                 visible={visibleMenu === event.idEvent}
                 onDismiss={() => setVisibleMenu(null)}
@@ -70,8 +66,9 @@ const EventItem = ({ event, index,token }) => {
                     setVisibleMenu(null);
                 }}
                 onDelete={async() => {
-                    confirmDelete(event.idEvent);
+                    
                     const result = await dispatch(deleteEvent(token, event.idEvent));
+                    loadList()
                     setVisibleMenu(null);
                 }}
             />

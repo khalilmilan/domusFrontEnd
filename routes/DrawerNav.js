@@ -10,7 +10,7 @@ const DrawerNav = ()=>{
         drawerContent={ props => <CustomDrawerContent {...props} /> }
         >
         <Drawer.Screen 
-          name="Homed" 
+          name="Home" 
           component={BottomTabNav} 
            options={{
            headerShown:false

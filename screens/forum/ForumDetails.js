@@ -1,6 +1,7 @@
 import {
     SafeAreaView, FlatList, Image,
-    StyleSheet, Text, View, TouchableOpacity, ActivityIndicator
+    StyleSheet, Text, View, TouchableOpacity, ActivityIndicator,
+    ScrollView
 } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { useDispatch } from 'react-redux';
@@ -18,6 +19,7 @@ const ForumDetails = ({ navigation, route }) => {
     const [loading, setLoading] = useState(true);
     const [content, setContent] = useState('')
     const [idUser, setIdUser] = useState(null);
+    const [role,setRole] = useState();
     const dispatch = useDispatch();
     const load = async () => {
         try {
@@ -26,6 +28,7 @@ const ForumDetails = ({ navigation, route }) => {
                 let user = JSON.parse(userDetails);
                 let token = user.token;
                 setIdUser(user.userId);
+                setRole(user.role);
                 const result = await dispatch(fetchForum(token, idForum));
                 setForum(result);
                 // Faites quelque chose avec profileData ici
@@ -59,8 +62,7 @@ const ForumDetails = ({ navigation, route }) => {
                         date
                     };
                     const uiComment = await dispatch(addComment(token, comment));
-                    // navigation.navigate('EventDetails', { eventId: idEvent })
-                    // Faites quelque chose avec profileData ici
+                    load();
                 } else {
                     console.log("No user details found in AsyncStorage");
                 }
@@ -77,7 +79,7 @@ const ForumDetails = ({ navigation, route }) => {
         return (<ActivityIndicator size="large" color="#0000ff" />);  // Afficher un indicateur de chargement
     } else {
         return (
-            <SafeAreaView style={styles.container}>
+            <ScrollView style={styles.container}>
                 <View style={styles.topicContainer}>
                     <LinearGradient
                         colors={['#4a90e2', '#63a4ff']}
@@ -85,13 +87,13 @@ const ForumDetails = ({ navigation, route }) => {
                     >
                         <View style={styles.header}>
                             <Text style={styles.topicTitle}>{forum.title} </Text>
-                            <TouchableOpacity style={styles.updateButton}
-                                onPress={() => { navigation.navigate("UpdateForum", { forum: forum }) }}
+                            
+                            {role=="ADMIN"&&<TouchableOpacity style={styles.updateButton}
+                                onPress={() => { navigation.navigate("UpdateForum", { forum: forum,loadForumDetails:load }) }}
                             >
-
                                 <MaterialIcons name="update" size={18} color="white" />
                                 <Text style={styles.updateText}>update</Text>
-                            </TouchableOpacity>
+                            </TouchableOpacity>}
                         </View>
                         <Text style={styles.topicDescription}>{forum.description}</Text>
                         <View style={styles.authorContainer}>
@@ -109,7 +111,7 @@ const ForumDetails = ({ navigation, route }) => {
                     <Text style={styles.commentsTitle}>Comments</Text>
                     <FlatList
                         data={forum.comments}
-                        renderItem={({ item }) => <CommentComponent item={item} idUser={idUser} />}
+                        renderItem={({ item }) => <CommentComponent item={item} idUser={idUser} loadComments={load} />}
                         keyExtractor={(item) => item.idCommentaire.toString()}
                         contentContainerStyle={styles.commentsList}
                     />
@@ -125,7 +127,7 @@ const ForumDetails = ({ navigation, route }) => {
                         </TouchableOpacity>
                     </View>
                 </View>
-            </SafeAreaView>
+            </ScrollView>
         )
     }
 }
@@ -183,14 +185,12 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: '#E0E0E0',
     },
-    commentsSection: {
-        flex: 1,
-    },
+      
     commentsTitle: {
         fontSize: 20,
         fontWeight: 'bold',
         margin: 16,
-        color: '#333',
+        color: '#007bff',
     },
     commentsList: {
         padding: 8,

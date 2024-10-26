@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View,TextInput,Button } from 'react-native'
+import { StyleSheet, Text, View,TextInput,TouchableOpacity } from 'react-native'
 import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -9,6 +9,8 @@ const AddForum = ({navigation, route}) => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     let idEvent=route.params.eventId;
+    let loadEventDetails = route.params.loadEventDetails
+    const isFormValid = title && description;
     const handleSubmit = async() => {
         try {
             // Créer l'objet avec les données mises à jour    
@@ -24,9 +26,9 @@ const AddForum = ({navigation, route}) => {
                         idUser,
                         description,
                         idEvent
-                        
                     };
                     const uiUpdate = await dispatch(addForum(token, forum));
+                    loadEventDetails()
                     navigation.navigate('EventDetails', { eventId: idEvent })
                     // Faites quelque chose avec profileData ici
                 } else {
@@ -42,52 +44,121 @@ const AddForum = ({navigation, route}) => {
         }
     };
   return (
-    <View style={styles.container}>
-            <TextInput
-                style={styles.input}
-                placeholder="title"
-                value={title}
-                onChangeText={setTitle}
-            />
-            <TextInput
-                style={styles.input}
-                placeholder="description"
-                multiline={true}
-                numberOfLines={4}
-                value={description}
-                onChangeText={setDescription}
-            />
-            <Button title="Add Forum" onPress={handleSubmit} />
-        </View>
+      <View style={styles.container}>
+          <Text style={styles.pageTitle}>Add Forum</Text>
+          <View style={styles.fieldset}>
+              <Text style={styles.legend}>Forum Details </Text>
+              <View style={styles.field}>
+                  <Text style={styles.labelText}>Label</Text>
+                  <TextInput
+                      style={styles.input}
+                      placeholder="Entrez un label"
+                      value={title}
+                      onChangeText={setTitle}
+                      placeholderTextColor="#888"
+                  />
+              </View>
+              <View style={styles.field}>
+                  <Text style={styles.labelText}>Description</Text>
+                  <TextInput
+                      style={[styles.input, styles.textarea]}
+                      placeholder="Entrez une description"
+                      value={description}
+                      onChangeText={setDescription}
+                      multiline={true}
+                      numberOfLines={4}
+                      placeholderTextColor="#888"
+                  />
+              </View>
+          </View>
+          <TouchableOpacity style={styles.submitButton}
+              onPress={handleSubmit}
+              disabled={!isFormValid}
+          >
+              <Text style={styles.submitButtonText}>Add Forum</Text>
+          </TouchableOpacity>
+      </View>
   )
 }
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
-        padding: 20,     
-        justifyContent: "center",
+        margin: 20,
+        padding: 20,
+        borderRadius: 10,
+        backgroundColor: '#f4f6f9', // Couleur douce pour le fond
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
     },
-
-    
-    input: {
+    pageTitle: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        marginBottom: 20,
+        textAlign: 'center',
+        color: '#333',
+    },
+    fieldset: {
+        padding: 15,
+        borderColor: '#007bff', // Bordure bleue
         borderWidth: 1,
-        borderColor: '#ddd',
-        padding: 10,
-        marginBottom: 10,
-        borderRadius: 5,
+        borderRadius: 10,
+        marginBottom: 20,
+        backgroundColor: '#fff',
     },
-    button: {
-        backgroundColor: '#007AFF',
-        padding: 10,
-        borderRadius: 5,
-    },
-    buttonText: {
-        color: 'white',
-        fontSize: 16,
-    },
-    title: {
+    legend: {
         fontSize: 18,
-        marginBottom: 10,
+        fontWeight: 'bold',
+        marginBottom: 15,
+        color: '#007bff',
+    },
+    field: {
+        marginBottom: 20,
+    },
+    labelText: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginBottom: 5,
+        color: '#333',
+    },
+    input: {
+        height: 40,
+        borderColor: '#ccc',
+        borderWidth: 1,
+        paddingHorizontal: 10,
+        borderRadius: 5,
+        backgroundColor: '#e9ecef', // Légèrement coloré pour les champs
+        color: '#333', // Texte dans les champs
+    },
+    textarea: {
+        height: 100,
+        textAlignVertical: 'top',
+    },
+    datePickerButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 10,
+    },
+    dateText: {
+        marginLeft: 10,
+        fontSize: 16,
+        color: '#333', // Couleur du texte de la date
+    },
+    datePicker: {
+        marginTop: 20, // Corrige la position du DatePicker
+    },
+    submitButton: {
+        backgroundColor: '#007bff',
+        padding: 15,
+        borderRadius: 5,
+        alignItems: 'center',
+        marginTop: 10,
+    },
+    submitButtonText: {
+        color: '#fff',
+        fontWeight: 'bold',
+        fontSize: 16,
     },
 });
 export default AddForum

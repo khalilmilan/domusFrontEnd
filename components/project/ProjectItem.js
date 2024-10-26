@@ -4,9 +4,10 @@ import { useNavigation } from '@react-navigation/native';
 import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { deleteProjectById } from '../../redux/actions/actionProject';
+import { Formedate } from '../../.expo/utils/formatDate';
 
-const ProjectItem =({project, index,token }) => {
-  const navigation = useNavigation();
+const ProjectItem =({project,index,token,loadList,role}) => {
+    const navigation = useNavigation();
     const dispatch = useDispatch();
     const [visibleMenu, setVisibleMenu] = useState(null);
     const confirmDelete = (eventId) => {
@@ -47,16 +48,16 @@ const ProjectItem =({project, index,token }) => {
                  onPress={() => navigation.navigate('ProjectDetails', { idProject: project.idProject })}
                 >
                 <Text style={styles.eventTitle}>{project.title}</Text>
-                <Text style={styles.creator}>{`Created by : ${project.user.firstName} ${project.user.lastName}`}</Text>
+                <Text style={styles.creator}>{'from: ' + Formedate(project.startDate) +' to :'+ Formedate(project.endDate)}</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => setVisibleMenu(project.idProject)}>
+            {role=="ADMIN"&&<TouchableOpacity onPress={() => setVisibleMenu(project.idProject)}>
                 <MaterialIcons name="more-vert" size={24} color="gray" />
-            </TouchableOpacity>
+            </TouchableOpacity>}
             <OptionMenu
                 visible={visibleMenu === project.idProject}
                 onDismiss={() => setVisibleMenu(null)}
                 onEdit={() => {
-                    navigation.navigate('UpdateProject', { idProject: project.idProject })
+                    navigation.navigate('UpdateProject', { idProject: project.idProject, loadList:loadList })
                     setVisibleMenu(null);
                 }}
                 onDelete={async() => {
