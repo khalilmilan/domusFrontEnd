@@ -33,10 +33,32 @@ import ProjectDetailsPage from '../screens/project/ProjectDetailsPage';
 import GroupePage from '../screens/group/GroupePage';
 import EventsPage from '../screens/event/EventsPage';
 import Discussions from '../screens/Discussions';
+import ChatScreen from '../screens/ChatScreen';
+import NewDiscussionModal from '../components/discussion/NewDiscussionModal';
+import EventListScreen from '../screens/event/EventListScreen';
+import EventsListScreen from '../screens/event/EventsListScreen';
+import DatePickerComponent from '../screens/event/DateTimePicker';
+import EventForm from '../screens/event/EventForm';
+import EventDetailsScreen from '../screens/event/EventDetailsScreen';
+import ListForum from '../screens/forum/ListForum';
+import ListTicket from '../screens/ticket/ListTicket';
+import ListSurveyValue from '../screens/surveyValue/ListSurveyValue';
+import SurveyResultScreen from '../screens/survey/SurveyResultScreen';
+import TeamChatScreen from '../screens/TeamChatScreen';
+import ConversationsScreen from '../screens/ConversationsScreen';
+import ConversationList from '../screens/ConversationList';
+import Inscription from './Inscription';
+import { THEME_COLOR } from '../constants';
 
 const HomeStack = createStackNavigator();
 
 const HomeStackScreen = ({ navigation }) => {
+    const option = {
+        title: "",
+        headerStyle: {
+            backgroundColor: THEME_COLOR,
+        }
+    }
     return (
         <HomeStack.Navigator
             screenOptions={{
@@ -51,38 +73,63 @@ const HomeStackScreen = ({ navigation }) => {
             }}
         >
             <HomeStack.Screen name="Home" component={Home} options={{ title: "Acceuil" }} />
-            <HomeStack.Screen name="Profil" component={Portfolio} />
-            <HomeStack.Screen name="Listes" component={Listes} options={{ title: "Events" }} />
-            <HomeStack.Screen name="Sujets" component={Sujets} options={{ title: "Groups" }}/>
-            <HomeStack.Screen name="Signets" component={Signets} options={{ title: "Projects" }}/>
-            <HomeStack.Screen name="Moments" component={Moments} options={{ title: "Surveys" }}/>
-            <HomeStack.Screen name="profilUpdate" component={ProfilUpdate} />
-            <HomeStack.Screen name="EventDetails" component={EventDetails} />
-            <HomeStack.Screen name="AddEvent" component={AddEvent} options={{ title: "Add Event" }} />
-            <HomeStack.Screen name="EditEvent" component={EventUpdate} options={{ title: "Update Event" }} />
-            <HomeStack.Screen name="ForumDetails" component={ForumDetails} options={{ title: "Forum Details" }} />
-            <HomeStack.Screen name="AddForum" component={AddForum} options={{ title: "Add Forum" }} />
+            <HomeStack.Screen name="Profil" component={Portfolio} options={{
+                title: "",
+                headerStyle: {
+                    backgroundColor: "#3d3b8f",
+                }
+            }} />
+            <HomeStack.Screen name="Listes" component={Listes} options={option} />
+            <HomeStack.Screen name="Sujets" component={Sujets} options={option} />
+            <HomeStack.Screen name="Signets" component={Signets} options={option} />
+            <HomeStack.Screen name="Moments" component={Moments} options={option} />
+            <HomeStack.Screen name="profilUpdate" component={ProfilUpdate} options={option} />
+            <HomeStack.Screen name="EventDetails" component={EventDetails} options={option} />
+            <HomeStack.Screen name="AddEvent" component={AddEvent} options={option} />
+            <HomeStack.Screen name="EditEvent" component={EventUpdate} options={option} />
+            <HomeStack.Screen name="ForumDetails" component={ForumDetails}
+                options={{
+                    title: "",
+                    headerStyle: {
+                        backgroundColor: "#4a90e2",
+                    }
+                }} />
+            <HomeStack.Screen name="AddForum" component={AddForum}
+                options={option}
+            />
             <HomeStack.Screen name="UpdateForum" component={UpdateForum} options={{ title: "Update Forum" }} />
-            <HomeStack.Screen name="AddGroupe" component={AddGroup} options={{ title: "Add Groupe" }} />
-            <HomeStack.Screen name="UpdateGroupe" component={UpdateGroupe} options={{ title: "Update Groupe" }} />
-            <HomeStack.Screen name="GroupeDetails" component={GroupeDetails} options={{ title: "Groupe Details" }} />
-            <HomeStack.Screen name="AddProject" component={AddProject} options={{ title: "Add Project" }} />
-            <HomeStack.Screen name="UpdateProject" component={UpdateProject} options={{ title: "Update Project" }} />
-            <HomeStack.Screen name="ProjectDetails" component={ProjectDetails} options={{ title: "Project Details" }} />
-            <HomeStack.Screen name="AddTicket" component={AddTicket} options={{ title: "Add Ticket" }} />
-            <HomeStack.Screen name="UpdateTicket" component={UpdateTicket} options={{ title: "Update Ticket" }} />
-            <HomeStack.Screen name="TicketDetails" component={TicketDetails} options={{ title: "Ticket Details" }} />
-            <HomeStack.Screen name="AddSurvey" component={AddSurvey} options={{ title: "Add Survey" }} />
-            <HomeStack.Screen name='UpdateSurvey' component={UpdateSurvey} options={{title:"Update Survey"}}/>
-            <HomeStack.Screen name="SurveyDetails" component={SurveyDetails} option={{title: "Survey Details"}}/>
-            <HomeStack.Screen name="SondageDetails" component={SondageDetails} option={{title: "sondage Details"}}/>
-            <HomeStack.Screen name="AddSurveyValue" component={AddSurveyValue} option={{title: " Add Survey value"}}/>
-            <HomeStack.Screen name="ProjectDetailsPage" component={ProjectDetailsPage} option={{title: "project details"}}/>
-            <HomeStack.Screen name="GroupePage" component={GroupePage} option={{title: "groupe page"}}/>
-            <HomeStack.Screen name="UpdateSurveyValue" component={UpdateSurveyValue} option={{title: "Update Survey Value"}}/>
-            <HomeStack.Screen name="EventsPage" component={EventsPage} option={{title: "EventsPage"}}/>
-            <HomeStack.Screen name="Discussions" component={Discussions} option={{title: "Discussions"}}/>
-        
+            <HomeStack.Screen name="AddGroupe" component={AddGroup} options={option} />
+            <HomeStack.Screen name="UpdateGroupe" component={UpdateGroupe} options={option} />
+            <HomeStack.Screen name="GroupeDetails" component={GroupeDetails} options={option} />
+            <HomeStack.Screen name="AddProject" component={AddProject} options={option} />
+            <HomeStack.Screen name="UpdateProject" component={UpdateProject} options={option} />
+            <HomeStack.Screen name="ProjectDetails" component={ProjectDetails} options={option} />
+            <HomeStack.Screen name="AddTicket" component={AddTicket} options={option} />
+            <HomeStack.Screen name="UpdateTicket" component={UpdateTicket} options={option} />
+            <HomeStack.Screen name="TicketDetails" component={TicketDetails} options={option} />
+            <HomeStack.Screen name="AddSurvey" component={AddSurvey} options={option} />
+            <HomeStack.Screen name='UpdateSurvey' component={UpdateSurvey} options={{ title: "Update Survey" }} />
+            <HomeStack.Screen name="SurveyDetails" component={SurveyDetails} options={option} />
+            <HomeStack.Screen name="SondageDetails" component={SondageDetails} option={{ title: "sondage Details" }} />
+            <HomeStack.Screen name="AddSurveyValue" component={AddSurveyValue} options={option} />
+            <HomeStack.Screen name="ProjectDetailsPage" component={ProjectDetailsPage} option={{ title: "project details" }} />
+            <HomeStack.Screen name="GroupePage" component={GroupePage} option={{ title: "groupe page" }} />
+            <HomeStack.Screen name="UpdateSurveyValue" component={UpdateSurveyValue} options={option} />
+            <HomeStack.Screen name="EventsPage" component={EventsPage} option={{ title: "EventsPage" }} />
+            <HomeStack.Screen name="Discussions" component={Discussions} options={option} />
+            <HomeStack.Screen name="ChatScreen" component={ChatScreen} options={option} />
+            <HomeStack.Screen name="NewDiscussionModal" component={NewDiscussionModal} />
+            <HomeStack.Screen name="Event_screen" component={EventListScreen} />
+            <HomeStack.Screen name="EventForm" component={EventForm} />
+            <HomeStack.Screen name="EventList" component={DatePickerComponent} />
+            <HomeStack.Screen name="EventDetailsScreen" component={EventDetailsScreen} />
+            <HomeStack.Screen name="ListForum" component={ListForum} options={option} />
+            <HomeStack.Screen name="ListTicket" component={ListTicket} options={option} />
+            <HomeStack.Screen name="ListSurveyValue" component={ListSurveyValue} options={option} />
+            <HomeStack.Screen name="SurveyResultScreen" component={SurveyResultScreen} />
+            <HomeStack.Screen name="TeamChatScreen" component={TeamChatScreen} />
+            <HomeStack.Screen name="ConversationList" component={ConversationList} />
+            <HomeStack.Screen name="Inscription" component={Inscription} />
         </HomeStack.Navigator>
     )
 }

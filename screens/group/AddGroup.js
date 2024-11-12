@@ -1,16 +1,29 @@
-import { StyleSheet, Text, View, Platform, TextInput, TouchableOpacity, Button } from 'react-native'
-import React, { useState } from 'react';
+
+import { addGroup } from '../../redux/actions/actionGroupe';
 import { useDispatch } from 'react-redux';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { addGroup } from '../../redux/actions/actionGroupe';
-
+import React, { useState } from 'react';
+import {
+    StyleSheet,
+    View,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    Animated,
+    Keyboard
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 const AddGroup = ({navigation,route}) => {
-    const [label, setLabel] = useState('');
     const dispatch = useDispatch();
     let loadListGroupe = route.params.loadList
     const handleSubmit = async() => {
         try {
-            // Créer l'objet avec les données mises à jour    
+            Keyboard.dismiss();
+            if (!formData.label.trim()) {
+                showAlertWithMessage('Please enter a title for this Group');
+                return;
+            }
+            showAlertWithMessage('Group added successfully!', 'success');  
             try {
                 let userDetails = await AsyncStorage.getItem("userDetails");
                 if (userDetails != null) {
@@ -18,12 +31,14 @@ const AddGroup = ({navigation,route}) => {
                     let token = user.token;
                     let idUser = user.userId
                     const groupe = {
-                        label,
+                        ...formData,
                         idUser
                     };
                     const uiUpdate = await dispatch(addGroup(token, groupe));
                     loadListGroupe();
-                    navigation.navigate('Sujets')
+                    setTimeout(() => {
+                        navigation.navigate('Sujets');
+                    }, 1500);
                 } else {
                     console.log("No user details found in AsyncStorage");
                 }
@@ -36,111 +51,268 @@ const AddGroup = ({navigation,route}) => {
             Alert.alert('Erreur', 'Impossible de mettre à jour le profil');
         }
     };
-    const isFormValid = label;
+    const [formData, setFormData] = useState({
+        label: ''
+    });
+    const [showAlert, setShowAlert] = useState(false);
+    const [alertMessage, setAlertMessage] = useState('');
+    const [alertType, setAlertType] = useState('error'); // 'error' ou 'success'
+    const fadeAnim = useState(new Animated.Value(0))[0];
+    const slideAnim = useState(new Animated.Value(-100))[0];
+    const showNotification = () => {
+        slideAnim.setValue(-100);
+        fadeAnim.setValue(0);
+        Animated.parallel([
+            Animated.timing(slideAnim, {
+                toValue: 0,
+                duration: 500,
+                useNativeDriver: true,
+            }),
+            Animated.timing(fadeAnim, {
+                toValue: 1,
+                duration: 500,
+                useNativeDriver: true,
+            }),
+        ]).start();
+
+        setTimeout(() => {
+            Animated.parallel([
+                Animated.timing(slideAnim, {
+                    toValue: -100,
+                    duration: 500,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(fadeAnim, {
+                    toValue: 0,
+                    duration: 500,
+                    useNativeDriver: true,
+                }),
+            ]).start(() => setShowAlert(false));
+        }, 3000);
+    };
+     const showAlertWithMessage = (message, type = 'error') => {
+        setAlertMessage(message);
+        setAlertType(type);
+        setShowAlert(true);
+        showNotification();
+    };
     return (
-       <View style={styles.container}>
-            <Text style={styles.pageTitle}>Add Groupe</Text>
-            <View style={styles.fieldset}>
-                <Text style={styles.legend}>Groupe Détails </Text>
-                <View style={styles.field}>
-                    <Text style={styles.labelText}>Label</Text>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Entrez un label"
-                        value={label}
-                        onChangeText={setLabel}
-                        placeholderTextColor="#888"
-                    />
+        <View style={styles.container}>
+            {/* Alerte améliorée */}
+            {showAlert && (
+                <Animated.View
+                    style={[
+                        styles.alert,
+                        alertType === 'success' ? styles.alertSuccess : styles.alertError,
+                        {
+                            opacity: fadeAnim,
+                            transform: [{ translateY: slideAnim }]
+                        }
+                    ]}
+                >
+                    <View style={styles.alertContent}>
+                        <Ionicons
+                            name={alertType === 'success' ? 'checkmark-circle' : 'alert-circle'}
+                            size={24}
+                            color={alertType === 'success' ? '#fff' : '#fff'}
+                        />
+                        <Text style={styles.alertText}>{alertMessage}</Text>
+                    </View>
+                </Animated.View>
+            )}
+
+            <Text style={styles.formTitle}>New Group</Text>
+
+            <View style={styles.fieldsetWrapper}>
+                <View style={styles.fieldset}>
+                    <View style={styles.legendWrapper}>
+                        <View style={styles.legendLine} />
+                        <View style={styles.legendContainer}>
+                            <Ionicons
+                                name={'information-circle-outline'}
+                                size={18}
+                                color="#8A84FF"
+                            />
+                            <Text style={styles.legend}>Generales informations</Text>
+                        </View>
+                        <View style={styles.legendLine} />
+                    </View>
+                    <View style={styles.fieldsetContent}>
+                        <View style={styles.inputContainer}>
+                            <Text style={styles.label}>Group title</Text>
+                            <TextInput
+                                key="input-label"
+                                style={styles.input}
+                                value={formData.label}
+                                onChangeText={(text) => setFormData({ ...formData, label: text })}
+                                placeholder="Enter the title..."
+                                placeholderTextColor="#999"
+                            />
+                        </View>
+                        
+                    </View>
                 </View>
             </View>
-            <TouchableOpacity style={styles.submitButton}
-                onPress={handleSubmit}
-                disabled={!isFormValid}
-            >
-                <Text style={styles.submitButtonText}>Add Groupe</Text>
+            <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
+                <Ionicons name="add-circle-outline" size={20} color="#fff" style={styles.buttonIcon} />
+                <Text style={styles.buttonText}>Add Group</Text>
             </TouchableOpacity>
         </View>
     );
+
 }
 const styles = StyleSheet.create({
     container: {
-        margin: 20,
+        flex: 1,
         padding: 20,
-        borderRadius: 10,
-        backgroundColor: '#f4f6f9', // Couleur douce pour le fond
+        backgroundColor: '#f8f9fa',
+    },
+    alert: {
+        position: 'absolute',
+        top: 20,
+        left: 20,
+        right: 20,
+        borderRadius: 12,
+        zIndex: 100,
+        padding: 16,
+        flexDirection: 'row',
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
+        shadowOffset: {
+            width: 0,
+            height: 4,
+        },
+        shadowOpacity: 0.3,
+        shadowRadius: 4.65,
+        elevation: 8,
+    },
+    alertSuccess: {
+        backgroundColor: '#00b894',
+    },
+    alertError: {
+        backgroundColor: '#ff7675',
+    },
+    alertContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    alertText: {
+        color: 'white',
+        fontSize: 16,
+    },
+
+    buttonIcon: {
+        marginRight: 8,
+    },
+    buttonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    fieldsetWrapper: {
+        marginBottom: 25,
+        paddingHorizontal: 15,
+    },
+    fieldset: {
+        backgroundColor: '#fff',
+        borderRadius: 16,
+        borderWidth: 1.5,
+        borderColor: '#e0e0e0',
+        paddingHorizontal: 15,
+        paddingVertical: 20,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 3.84,
+        elevation: 5,
+    },
+    legendWrapper: {
+        position: 'absolute',
+        top: -14,
+        left: 0,
+        right: 0,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 12,
+    },
+    legendLine: {
+        flex: 1,
+        height: 1.5,
+        backgroundColor: '#e0e0e0',
+    },
+    legendContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#f8f9fa',
+        paddingHorizontal: 12,
+        paddingVertical: 4,
+        borderRadius: 20,
+        marginHorizontal: 10,
+        borderWidth: 1.5,
+        borderColor: '#e0e0e0',
+    },
+    legend: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#2c3e50',
+        marginLeft: 6,
+    },
+    fieldsetContent: {
+        marginTop: 5,
+    },
+    inputContainer: {
+        marginBottom: 15,
+    },
+    label: {
+        fontSize: 14,
+        fontWeight: '500',
+        color: '#2c3e50',
+        marginBottom: 8,
+        marginLeft: 4,
+    },
+    input: {
+        backgroundColor: '#f8f9fa',
+        borderRadius: 12,
+        padding: 15,
+        fontSize: 16,
+        color: '#2c3e50',
+        borderWidth: 1.5,
+        borderColor: '#e0e0e0',
+    },
+    textArea: {
+        height: 120,
+        paddingTop: 15,
+        textAlignVertical: 'top',
+    },
+    submitButton: {
+        backgroundColor: '#8A84FF',
+        borderRadius: 12,
+        padding: 16,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 20,
+        marginHorizontal: 15,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
         shadowOpacity: 0.25,
         shadowRadius: 3.84,
         elevation: 5,
     },
-    pageTitle: {
+   
+    formTitle: {
         fontSize: 24,
         fontWeight: 'bold',
-        marginBottom: 20,
+        color: '#8A84FF',
+        marginBottom: 30,
         textAlign: 'center',
-        color: '#333',
-    },
-    fieldset: {
-        padding: 15,
-        borderColor: '#007bff', // Bordure bleue
-        borderWidth: 1,
-        borderRadius: 10,
-        marginBottom: 20,
-        backgroundColor: '#fff',
-    },
-    legend: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        marginBottom: 15,
-        color: '#007bff',
-    },
-    field: {
-        marginBottom: 20,
-    },
-    labelText: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        marginBottom: 5,
-        color: '#333',
-    },
-    input: {
-        height: 40,
-        borderColor: '#ccc',
-        borderWidth: 1,
-        paddingHorizontal: 10,
-        borderRadius: 5,
-        backgroundColor: '#e9ecef', // Légèrement coloré pour les champs
-        color: '#333', // Texte dans les champs
-    },
-    textarea: {
-        height: 100,
-        textAlignVertical: 'top',
-    },
-    datePickerButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 10,
-    },
-    dateText: {
-        marginLeft: 10,
-        fontSize: 16,
-        color: '#333', // Couleur du texte de la date
-    },
-    datePicker: {
-        marginTop: 20, // Corrige la position du DatePicker
-    },
-    submitButton: {
-        backgroundColor: '#007bff',
-        padding: 15,
-        borderRadius: 5,
-        alignItems: 'center',
         marginTop: 10,
-    },
-    submitButtonText: {
-        color: '#fff',
-        fontWeight: 'bold',
-        fontSize: 16,
     },
 });
 export default AddGroup

@@ -87,13 +87,6 @@ const ForumDetails = ({ navigation, route }) => {
                     >
                         <View style={styles.header}>
                             <Text style={styles.topicTitle}>{forum.title} </Text>
-                            
-                            {role=="ADMIN"&&<TouchableOpacity style={styles.updateButton}
-                                onPress={() => { navigation.navigate("UpdateForum", { forum: forum,loadForumDetails:load }) }}
-                            >
-                                <MaterialIcons name="update" size={18} color="white" />
-                                <Text style={styles.updateText}>update</Text>
-                            </TouchableOpacity>}
                         </View>
                         <Text style={styles.topicDescription}>{forum.description}</Text>
                         <View style={styles.authorContainer}>
@@ -142,7 +135,7 @@ const styles = StyleSheet.create({
     },
     topicContainer: {
         marginBottom: 16,
-        borderRadius: 12,
+       // borderRadius: 12,
         overflow: 'hidden',
         elevation: 4,
         shadowColor: '#000',

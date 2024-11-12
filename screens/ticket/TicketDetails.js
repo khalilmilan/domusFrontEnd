@@ -108,12 +108,6 @@ const TicketDetails = ({ navigation, route }) => {
                     >
                         <View style={styles.header}>
                             <Text style={styles.topicTitle}>{ticket.title} </Text>
-                            {role == "ADMIN" && <TouchableOpacity style={styles.updateButton}
-                                onPress={() => { navigation.navigate("UpdateTicket", { ticket: ticket,loadTicket:load }) }}
-                            >
-                                <MaterialIcons name="update" size={18} color="white" />
-                                <Text style={styles.updateText}>update</Text>
-                            </TouchableOpacity>}
                         </View>
                         <Text style={styles.topicDescription}>{ticket.description}</Text>
                         <View style={styles.authorContainer}>
@@ -190,7 +184,7 @@ const TicketDetails = ({ navigation, route }) => {
                 <Modal visible={addModalVisible} transparent animationType="fade">
                     <View style={styles.modalContainer}>
                         <View style={styles.modalContent}>
-                            <Text style={styles.modalTitle}>Add membre</Text>
+                            <Text style={styles.modalTitle}>Affected to</Text>
                             <FlatList
                                 data={membres}
                                 renderItem={renderAvailableUser}

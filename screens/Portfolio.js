@@ -4,26 +4,16 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { UserDetails, UserProfil } from '../redux/actions/actionUser';
 import { useDispatch } from 'react-redux';
 import { format, parseISO } from 'date-fns';
+import MySvgImage from '../assets/logo_couverture.svg';
 const Portfolio = ({ navigation, route }) => {
 
     const [loading, setLoading] = useState(true);
     const [token, setToken] = useState(null);
-    const [profilData,setProfilData]=useState()
     const dispatch = useDispatch();
     const handleEditPress = () => {
-        navigation.navigate("profilUpdate", { profilData: profilData, loadProfil:load });
+        navigation.navigate("profilUpdate", { profilData: userProfil.user, loadProfil:load });
     }
-    const [firstName, setFirstName] = useState("");
-    const [lastName, setLastName] = useState('');
-    const [email, setEmail] = useState('');
-    const [photo, setPhoto] = useState('');
-    const [adresse, setAdress] = useState('');
-    const [birthDate, setBirthDate] = useState('');
-    const [gender, setGender] = useState('');
-    const [phoneNumber, setPhoneNumber] = useState('');
-    const [projectCount,setProjectCount] = useState();
-    const [surveyCount,setSurveyCount] = useState();
-    const [eventCount,setEventCount] = useState();
+    const [userProfil, setUserProfil] = useState("");
      const load = async () => {
          try {
              let userDetails = await AsyncStorage.getItem("userDetails");
@@ -33,18 +23,7 @@ const Portfolio = ({ navigation, route }) => {
                  let idUser = user.userId;
                  setToken(tokens)
                  const result = await dispatch(UserDetails(tokens, idUser));
-                 setProfilData(result.user)
-                 setFirstName(result.user.firstName);
-                 setLastName(result.user.lastName);
-                 setEmail(result.user.email)
-                 setBirthDate(result.user.birthDate)
-                 setPhoto(result.user.photo)
-                 setGender(result.user.gender)
-                 setAdress(result.user.adresse)
-                 setPhoneNumber(result.user.phoneNumber)
-                 setProjectCount(result.countProject);
-                 setSurveyCount(result.countSurvey);
-                 setEventCount(result.countEvent);
+                 setUserProfil(result)
                  // Faites quelque chose avec profileData ici
              } else {
                  console.log("No user details found in AsyncStorage");
@@ -69,61 +48,60 @@ const Portfolio = ({ navigation, route }) => {
     else {
         return (
             <ScrollView style={styles.container}>
+                 <View style={styles.coverPhotoContainer}>
+                        <MySvgImage width="100%" height={200} />
+                    </View>
                 <View style={styles.headerContainer}>
-                    <Image
-                        style={styles.coverPhoto}
-                        source={require('../assets/forum-domus-logo_couverture.png')}
-                    />
                     <View style={styles.profileContainer}>
                         <Image
                             style={styles.profilePhoto}
                             source={
-                                photo
-                                ? { uri: photo }
-                                : gender === 'MALE'
+                                userProfil.user.photo
+                                ? {uri: userProfil.user.photo}
+                                : userProfil.user.gender === 'MALE'
                                 ? require('../assets/avatar0.png')
                                 : require('../assets/avatar2.png')
                             }
                         />
-                        <Text style={styles.nameText}>{firstName} {lastName}</Text>
+                        <Text style={styles.nameText}>{userProfil.user.firstName} {userProfil.user.lastName}</Text>
                     </View>
                 </View>
                 <View style={styles.bioContainer}>
                     <Text style={styles.bioText}>
-                        <Text style={styles.nameText}>Email: </Text><Text style={styles.valueText}>{email}</Text>
+                        <Text style={styles.nameText}>Email: </Text><Text style={styles.valueText}>{userProfil.user.email}</Text>
                     </Text>
                 </View>
                 <View style={styles.bioContainer}>
                     <Text style={styles.bioText}>
-                        <Text style={styles.nameText}>birthDate: </Text><Text style={styles.valueText}>{formatBirthdate(birthDate)}</Text>
+                        <Text style={styles.nameText}>birthDate: </Text><Text style={styles.valueText}>{formatBirthdate(userProfil.user.birthDate)}</Text>
                     </Text>
                 </View>
                 <View style={styles.bioContainer}>
                     <Text style={styles.bioText}>
-                        <Text style={styles.nameText}>PhoneNumber: </Text><Text style={styles.valueText}>{phoneNumber}</Text>
+                        <Text style={styles.nameText}>PhoneNumber: </Text><Text style={styles.valueText}>{userProfil.user.phoneNumber}</Text>
                     </Text>
                 </View>
                 <View style={styles.bioContainer}>
                     <Text style={styles.bioText}>
-                        <Text style={styles.nameText}>Adress: </Text> <Text style={styles.valueText}>{adresse}</Text>
+                        <Text style={styles.nameText}>Adress: </Text> <Text style={styles.valueText}>{userProfil.user.adresse}</Text>
                     </Text>
                 </View>
                 <View style={styles.bioContainer}>
                     <Text style={styles.bioText}>
-                        <Text style={styles.nameText}>Gender: </Text> <Text style={styles.valueText}>{gender}</Text>
+                        <Text style={styles.nameText}>Gender: </Text> <Text style={styles.valueText}>{userProfil.user.gender}</Text>
                     </Text>
                 </View>
                 <View style={styles.statsContainer}>
                     <View style={styles.statContainer}>
-                        <Text style={styles.statCount}>{projectCount}</Text>
+                        <Text style={styles.statCount}>{userProfil.countProject}</Text>
                         <Text style={styles.statLabel}>Projects</Text>
                     </View>
                     <View style={styles.statContainer}>
-                        <Text style={styles.statCount}>{eventCount}</Text>
+                        <Text style={styles.statCount}>{userProfil.countEvent}</Text>
                         <Text style={styles.statLabel}>Events</Text>
                     </View>
                     <View style={styles.statContainer}>
-                        <Text style={styles.statCount}>{surveyCount}</Text>
+                        <Text style={styles.statCount}>{userProfil.countSurvey}</Text>
                         <Text style={styles.statLabel}>surveys</Text>
                     </View>
                 </View>
@@ -158,12 +136,12 @@ const styles = StyleSheet.create({
     },
     coverPhoto: {
         width: '100%',
-        height: 200,
-        marginTop: -30,
+        height: "100%",
+       // marginTop: -30,
     },
     profileContainer: {
         alignItems: 'center',
-        marginTop: -30,
+        marginTop: -50,
     },
     profilePhoto: {
         width: 100,
@@ -213,4 +191,9 @@ const styles = StyleSheet.create({
         color: '#fff',
         textAlign: 'center',
     },
+    coverPhotoContainer: {
+    width: '100%',
+    height: 200,
+    backgroundColor: "#3d3b8f", // Couleur de fond de réserve pendant le chargement de l'image
+  },
 })

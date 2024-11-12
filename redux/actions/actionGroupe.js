@@ -103,9 +103,6 @@ export const addUserToGroupe = (token,idGroupe,idUser) => async (dispatch) => {
 
 export const deleteUserFromGroupe = (token,idGroupe,idUser) => async (dispatch) => {
   try {
-    console.log('token: '+token);
-    console.log('idGroupe: '+idGroupe);
-    console.log("idUser: "+idUser);
     const response = await fetch(`http://${ADRESSE_IP}:9008/groupe/delete_membre/${idGroupe}/${idUser}`, {
                 method: 'DELETE',
                 headers: {
@@ -150,3 +147,18 @@ export const fetchMembreGroups = (token, idUser) => {
         }
     }
 }
+
+export const leaveGroupe = (token,idGroupe,idUser) => async (dispatch) => {
+  try {
+    const response = await fetch(`http://${ADRESSE_IP}:9008/groupe/leave_groupe/${idGroupe}/${idUser}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'content-type': 'application/json'
+                }
+            });
+    return response;
+  } catch (error) {
+    console.log(error)
+  }
+};

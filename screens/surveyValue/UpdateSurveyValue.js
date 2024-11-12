@@ -1,21 +1,37 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import ColorPicker from 'react-native-wheel-color-picker';
 import { useDispatch } from 'react-redux';
-import { addSurveyValue, editSurveyValue } from '../../redux/actions/actionSurveyValue';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useEffect, useState } from 'react';
+import ColorPicker from 'react-native-wheel-color-picker';
+import {
+  StyleSheet,
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Platform,
+  Animated,
+  Keyboard,
+  Modal,
+  FlatList,
+  ScrollView,
+
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { editSurveyValue } from '../../redux/actions/actionSurveyValue';
 
 const UpdateSurveyValue = ({ navigation, route }) => {
-  let surveyValue = route.params.surveyValue;
-  let loadSurvey = route.params.load;
-  const [title, setTitle] = useState(surveyValue.title);
-  const [description, setDescription] = useState(surveyValue.description);
-  console.log("color: " + surveyValue.codeColor);
-  const [colorCode, setColorCode] = useState(surveyValue.colorCode ? surveyValue.colorCode : '#000000');
+
+
+  let loadList = route.params.loadList;
+  const [surveyValue, setSurveyValue] = useState(route.params.surveyValue);
   const [token, setToken] = useState();
   const [idUser, setIdUser] = useState();
   const dispatch = useDispatch();
-
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
+  const [alertType, setAlertType] = useState('error'); // 'error' ou 'success'
+  const fadeAnim = useState(new Animated.Value(0))[0];
+  const slideAnim = useState(new Animated.Value(-100))[0];
   const load = async () => {
     try {
       let userDetails = await AsyncStorage.getItem("userDetails");
@@ -36,179 +52,485 @@ const UpdateSurveyValue = ({ navigation, route }) => {
   useEffect(() => {
     load();
   }, [token])
+  const showNotification = () => {
+    slideAnim.setValue(-100);
+    fadeAnim.setValue(0);
+    Animated.parallel([
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+    ]).start();
+    setTimeout(() => {
+      Animated.parallel([
+        Animated.timing(slideAnim, {
+          toValue: -100,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+      ]).start(() => setShowAlert(false));
+    }, 3000);
+  };
+
   const handleSubmit = async () => {
-    // Ici, vous pouvez ajouter la logique pour sauvegarder l'entité
     try {
-      let updatedValue = {
-        ...surveyValue,
-        title,
-        description,
-        colorCode
+      Keyboard.dismiss();
+      if (!surveyValue.title.trim()) {
+        showAlertWithMessage('Please enter a title for this option');
+        return;
       }
-      const result = await dispatch(editSurveyValue(token, updatedValue));
-      loadSurvey();
-      navigation.navigate('UpdateSurvey', { idSurvey: surveyValue.idSurvey })
+      if (!surveyValue.description.trim()) {
+        showAlertWithMessage('Please add a description for this option');
+        return;
+      }
+      if (surveyValue.colorCode == "#ffffff") {
+        showAlertWithMessage('choose a color other than white for this option');
+        return;
+      }
+      showAlertWithMessage('Option edited successfully!', 'success');
+      try {
+
+        const result = await dispatch(editSurveyValue(token, surveyValue));
+        loadList();
+        setTimeout(() => {
+          navigation.navigate('ListSurveyValue', { idSurvey: surveyValue.idSurvey })
+        }, 1500);
+      } catch (error) {
+        console.log("error" + error)
+      }
     } catch (error) {
-      console.log("error" + error)
+      console.error(error);
+      Alert.alert('Erreur', 'Impossible de mettre à jour le profil');
     }
   };
-const isFormValid = title && description && colorCode;
+
+  const showAlertWithMessage = (message, type = 'error') => {
+    setAlertMessage(message);
+    setAlertType(type);
+    setShowAlert(true);
+    showNotification();
+  };
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.pageTitle}>Update Value</Text>
-      <View style={styles.fieldset}>
-        <Text style={styles.legend}>Value Details </Text>
-        <View style={styles.field}>
-          <Text style={styles.labelText}>Label</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Entrez un label"
-            value={title}
-            onChangeText={setTitle}
-            placeholderTextColor="#888"
-          />
-        </View>
-        <View style={styles.field}>
-          <Text style={styles.labelText}>Description</Text>
-          <TextInput
-            style={[styles.input, styles.textarea]}
-            placeholder="Entrez une description"
-            value={description}
-            onChangeText={setDescription}
-            multiline={true}
-            numberOfLines={4}
-            placeholderTextColor="#888"
-          />
-        </View>
-        <Text style={styles.label}>choose color :</Text>
-        <View style={styles.colorPickerContainer}>
-          <ColorPicker
-            color={colorCode}
-            onColorChange={(color) => setColorCode(color)}
-            thumbSize={30}
-            sliderSize={30}
-            noSnap={true}
-            row={true}
-          />
-        </View>
-
-        <View style={[styles.colorPreview, { backgroundColor: colorCode }]}>
-          <Text style={styles.colorPreviewText}>Selected color: {colorCode}</Text>
-        </View>
-        <TouchableOpacity style={styles.submitButton}
-          onPress={handleSubmit}
-          disabled={!isFormValid}
+      {/* Alerte améliorée */}
+      {showAlert && (
+        <Animated.View
+          style={[
+            styles.alert,
+            alertType === 'success' ? styles.alertSuccess : styles.alertError,
+            {
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }]
+            }
+          ]}
         >
-          <Text style={styles.submitButtonText}>Update Value</Text>
-        </TouchableOpacity>
+          <View style={styles.alertContent}>
+            <Ionicons
+              name={alertType === 'success' ? 'checkmark-circle' : 'alert-circle'}
+              size={24}
+              color={alertType === 'success' ? '#fff' : '#fff'}
+            />
+            <Text style={styles.alertText}>{alertMessage}</Text>
+          </View>
+        </Animated.View>
+      )}
+
+      <Text style={styles.formTitle}>Edit Option</Text>
+
+      <View style={styles.fieldsetWrapper}>
+        <View style={styles.fieldset}>
+          <View style={styles.legendWrapper}>
+            <View style={styles.legendLine} />
+            <View style={styles.legendContainer}>
+              <Ionicons
+                name={'information-circle-outline'}
+                size={18}
+                color="#8A84FF"
+              />
+              <Text style={styles.legend}>Generales informations</Text>
+            </View>
+            <View style={styles.legendLine} />
+          </View>
+          <View style={styles.fieldsetContent}>
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Option title</Text>
+              <TextInput
+                key="input-label"
+                style={styles.input}
+                value={surveyValue.title}
+                onChangeText={(text) => setSurveyValue({ ...surveyValue, title: text })}
+                placeholder="Enter the title..."
+                placeholderTextColor="#999"
+              />
+            </View>
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Option description</Text>
+              <TextInput
+                key="input-description"
+                style={[styles.input, styles.textArea]}
+                value={surveyValue.description}
+                onChangeText={(text) => setSurveyValue({ ...surveyValue, description: text })}
+                placeholder="Describe your option..."
+                placeholderTextColor="#999"
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+              />
+            </View>
+
+          </View>
+        </View>
       </View>
+
+      <View style={styles.fieldsetWrapper}>
+        <View style={styles.fieldset}>
+          <View style={styles.legendWrapper}>
+            <View style={styles.legendLine} />
+            <View style={styles.legendContainer}>
+              <Ionicons
+                name={'eyedrop'}
+                size={18}
+                color="#8A84FF"
+              />
+              <Text style={styles.legend}>Color</Text>
+            </View>
+            <View style={styles.legendLine} />
+          </View>
+          <View style={styles.fieldsetContent}>
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Option color</Text>
+              <ColorPicker
+                color={surveyValue.colorCode}
+                onColorChange={(color) => setSurveyValue({ ...surveyValue, colorCode: color })}
+                thumbSize={30}
+                sliderSize={30}
+                noSnap={true}
+                row={true}
+              />
+            </View>
+          </View>
+        </View>
+      </View>
+      <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
+        <Ionicons name="create-outline" size={20} color="#fff" style={styles.buttonIcon} />
+        <Text style={styles.buttonText}>Edit Option</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
-}
 
+
+}
 const styles = StyleSheet.create({
-  container: {
-        margin: 20,
-        padding: 20,
-        borderRadius: 10,
-        backgroundColor: '#f4f6f9', // Couleur douce pour le fond
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
-        elevation: 5,
+
+  fieldset: {
+    marginBottom: 25,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
     },
-    pageTitle: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        marginBottom: 20,
-        textAlign: 'center',
-        color: '#333',
-    },
-    fieldset: {
-        padding: 15,
-        borderColor: '#007bff', // Bordure bleue
-        borderWidth: 1,
-        borderRadius: 10,
-        marginBottom: 20,
-        backgroundColor: '#fff',
-    },
-    legend: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        marginBottom: 15,
-        color: '#007bff',
-    },
-    field: {
-        marginBottom: 20,
-    },
-    labelText: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        marginBottom: 5,
-        color: '#333',
-    },
-    input: {
-        height: 40,
-        borderColor: '#ccc',
-        borderWidth: 1,
-        paddingHorizontal: 10,
-        borderRadius: 5,
-        backgroundColor: '#e9ecef', // Légèrement coloré pour les champs
-        color: '#333', // Texte dans les champs
-    },
-    textarea: {
-        height: 100,
-        textAlignVertical: 'top',
-    },
-    datePickerButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 10,
-    },
-    dateText: {
-        marginLeft: 10,
-        fontSize: 16,
-        color: '#333', // Couleur du texte de la date
-    },
-    datePicker: {
-        marginTop: 20, // Corrige la position du DatePicker
-    },
-    submitButton: {
-        backgroundColor: '#007bff',
-        padding: 15,
-        borderRadius: 5,
-        alignItems: 'center',
-        marginTop: 10,
-    },
-    submitButtonText: {
-        color: '#fff',
-        fontWeight: 'bold',
-        fontSize: 16,
-    },
- 
-  
- 
-  colorPickerContainer: {
-    height: 220,
-    marginBottom: 20,
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
-  colorPreview: {
-    height: 50,
+  legendContainer: {
+    position: 'absolute',
+    top: -12,
+    left: 20,
+    backgroundColor: '#fff',
+    paddingHorizontal: 10,
+    zIndex: 1,
+  },
+  legend: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#2c3e50',
+  },
+  fieldsetContent: {
+    padding: 20,
+    paddingTop: 25,
+  },
+  alert: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
+    right: 20,
+    borderRadius: 12,
+    zIndex: 100,
+    padding: 16,
+    flexDirection: 'row',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    elevation: 8,
+  },
+  alertSuccess: {
+    backgroundColor: '#00b894',
+  },
+  alertError: {
+    backgroundColor: '#ff7675',
+  },
+  alertContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  alertText: {
+    color: 'white',
+    fontSize: 16,
+  },
+  inputContainer: {
+    marginBottom: 15,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#2c3e50',
+    marginBottom: 8,
+  },
+  input: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+    padding: 15,
+    fontSize: 16,
+    color: '#2c3e50',
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+  },
+  textArea: {
+    height: 120,
+    paddingTop: 15,
+  },
+  dateButton: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+    padding: 15,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  dateIcon: {
+    marginRight: 10,
+  },
+  dateButtonText: {
+    fontSize: 16,
+    color: '#2c3e50',
+  },
+  buttonIcon: {
+    marginRight: 8,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  fieldsetWrapper: {
+    marginBottom: 25,
+    paddingHorizontal: 15,
+  },
+  fieldset: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: '#e0e0e0',
+    paddingHorizontal: 15,
+    paddingVertical: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  legendWrapper: {
+    position: 'absolute',
+    top: -14,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+  },
+  legendLine: {
+    flex: 1,
+    height: 1.5,
+    backgroundColor: '#e0e0e0',
+  },
+  legendContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 20,
+    marginHorizontal: 10,
+    borderWidth: 1.5,
+    borderColor: '#e0e0e0',
+  },
+  legend: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#2c3e50',
+    marginLeft: 6,
+  },
+  fieldsetContent: {
+    marginTop: 5,
+  },
+  inputContainer: {
+    marginBottom: 15,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#2c3e50',
+    marginBottom: 8,
+    marginLeft: 4,
+  },
+  input: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+    padding: 15,
+    fontSize: 16,
+    color: '#2c3e50',
+    borderWidth: 1.5,
+    borderColor: '#e0e0e0',
+  },
+  textArea: {
+    height: 120,
+    paddingTop: 15,
+    textAlignVertical: 'top',
+  },
+  dateButton: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+    padding: 15,
+    borderWidth: 1.5,
+    borderColor: '#e0e0e0',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  dateIcon: {
+    marginRight: 10,
+  },
+  dateButtonText: {
+    fontSize: 16,
+    color: '#2c3e50',
+  },
+  submitButton: {
+    backgroundColor: '#8A84FF',
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: -17,
+    marginHorizontal: 15,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  container: {
+    flex: 1,
+    padding: 10,
+    backgroundColor: '#f8f9fa',
+  },
+  formTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#8A84FF',
+    marginBottom: 30,
+    textAlign: 'center',
+  },
+  addParticipantButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  addParticipantText: {
+    marginLeft: 10,
+    color: '#8A84FF',
+    fontSize: 14,
+  },
+  modalContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 20,
+    alignItems: 'center',
+    elevation: 5,
+    width: '90%',
+    maxHeight: '80%',
+  },
+  modalText: {
+    fontSize: 18,
     marginBottom: 20,
-    borderRadius: 5,
+    textAlign: 'center',
   },
-  colorPreviewText: {
-    color: '#fff',
+  modalTitle: {
+    fontSize: 20,
     fontWeight: 'bold',
-    textShadowColor: 'rgba(0, 0, 0, 0.75)',
-    textShadowOffset: {width: -1, height: 1},
-    textShadowRadius: 10,
+    marginBottom: 20,
   },
-  
+  modalButtons: {
+    flexDirection: 'row',
+  },
+  modalButton: {
+    padding: 10,
+    borderRadius: 5,
+    minWidth: 100,
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: '#f44336',
+    marginRight: 10,
+  },
+  availableUserList: {
+    width: '100%',
+  },
+  modalButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  availableUserItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#e0e0e0',
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 10,
+  },
 });
+
+
 
 export default UpdateSurveyValue
 

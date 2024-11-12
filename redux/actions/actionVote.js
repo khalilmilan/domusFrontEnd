@@ -17,7 +17,7 @@ export const addVote = (token,vote) => async (dispatch) => {
   }
 };
 export const editVote = (token,vote) => async (dispatch) => {
-  try {
+  try { 
     const response = await fetch(`http://${ADRESSE_IP}:9011/vote/${vote.idVote}`, {
                 method: 'PUT',
                 headers: {

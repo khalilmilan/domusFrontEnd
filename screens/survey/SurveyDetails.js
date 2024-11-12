@@ -1,21 +1,17 @@
-import {
-    View, Text,
-    StyleSheet, ScrollView, Dimensions, TouchableOpacity, ActivityIndicator,
-    Modal,
-    FlatList
-} from 'react-native';
-import { PieChart } from 'react-native-chart-kit';
-import { LinearGradient } from 'expo-linear-gradient';
-import React, { useEffect, useState } from 'react'
-import { useDispatch } from 'react-redux';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+
+
+
 
 import { fetchSurvey } from '../../redux/actions/actionSurvey';
-import { isExists } from 'date-fns';
-import { Formedate } from '../../.expo/utils/formatDate';
-import { MaterialIcons } from '@expo/vector-icons';
-import { addVote, editVote } from '../../redux/actions/actionVote';
 
+import { addVote, editVote } from '../../redux/actions/actionVote';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, Share, ActivityIndicator, TouchableOpacity, Modal } from 'react-native';
+import { PieChart } from 'react-native-chart-kit';
+import { Button } from '@rneui/themed'; // Importer le bouton d'@rneui
+import { useDispatch } from 'react-redux';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { MaterialIcons } from '@expo/vector-icons';
 const SurveyDetails = ({ navigation, route }) => {
     const [survey, setSurvey] = useState(null);
     const dispatch = useDispatch();
@@ -37,8 +33,8 @@ const SurveyDetails = ({ navigation, route }) => {
         setTotalVotes(totalvote)
         let vp = votes.filter(vote => vote.idUser === idUser);
         if (vp.length > 0) {
-            setParticipantVote(vp[0]) 
-        } 
+            setParticipantVote(vp[0])
+        }
         const resultat = values.map(value => {
             const nombreVotes = votes.filter(vote => vote.idSurveyValue === value.idSurveyValue).length;
             let population = (nombreVotes / totalvote) * 100;
@@ -62,6 +58,7 @@ const SurveyDetails = ({ navigation, route }) => {
                 setIdUser(user.userId);
                 const result = await dispatch(fetchSurvey(tokens, idSurvey));
                 setSurvey(result);
+                console.log(result)
                 if (result.values.length > 0 && result.votes.length > 0) {
                     calculDataVote(result)
                 }
@@ -88,101 +85,138 @@ const SurveyDetails = ({ navigation, route }) => {
         useShadowColorFromDataset: false
     };
     const makeVote = async (idSurveyValue) => {
-        if(participantVote==null){
-           
-        let vote = {
-            title: " ",
-            idUser,
-            idSurvey: survey.idSurvey,
-            idSurveyValue,
-            "status": 1
-        }
-        let awaitVote = await dispatch(addVote(token, vote));
-        }else{
-            
-            let vote={
+        if (participantVote == null) {
+            let vote = {
+                title: " ",
+                idUser,
+                idSurvey: survey.idSurvey,
+                idSurveyValue,
+                "status": 1
+            }
+            let awaitVote = await dispatch(addVote(token, vote));
+        } else {
+
+            let vote = {
                 ...participantVote,
                 idSurveyValue
             }
-           let awaitVote = await dispatch(editVote(token, vote));
+            let awaitVote = await dispatch(editVote(token, vote));
         }
         load();
         setAddModalVoteVisible(false)
-
     }
-    const screenWidth = Dimensions.get("window").width;
+    // Exemple de données pour le PieChart
+    // Infos du sondage
+    const surveyInfo = {
+        title: "Survey on Customer Satisfaction",
+        groupName: "Marketing Team",
+        startDate: "2024-11-01",
+        endDate: "2024-11-30",
+        description: "This survey helps us understand customer satisfaction and gather feedback on our services."
+    };
+
+    // Fonction de partage
+    const handleShare = async () => {
+        try {
+            await Share.share({
+                message: `Survey Results: \nTitle: ${surveyInfo.title}\nGroup: ${surveyInfo.groupName}\nStart Date: ${surveyInfo.startDate}\nEnd Date: ${surveyInfo.endDate}\nResults: ${surveyData.map(option => `${option.name}: ${option.population}%`).join('\n')}`,
+            });
+        } catch (error) {
+            console.error("Error sharing: ", error.message);
+        }
+    };
+
+    // Rediriger vers la page d'options
+    const handleOptionsClick = () => {
+        navigation.navigate('ListSurveyValue', { idSurvey: idSurvey }); // Changez 'SurveyOptions' avec le nom de votre screen
+    };
     if (loading) {
         return (<ActivityIndicator size="large" color="#0000ff" />);  // Afficher un indicateur de chargement
     } else {
         return (
-            <ScrollView style={styles.container}>
-                <LinearGradient
-                    colors={['#4c669f', '#3b5998', '#192f6a']}
-                    style={styles.headerGradient}
-                >
+            <ScrollView contentContainerStyle={styles.container}>
+                {/* Header Section */}
+                <View style={styles.headerContainer}>
                     <Text style={styles.title}>{survey.title}</Text>
-                    <Text style={styles.subtitle}>Groupe: {survey.groupe.label} </Text>
-                    <Text style={styles.subtitle}>Conducted from {Formedate(survey.startDate)} to {Formedate(survey.endDate)}</Text>
-                </LinearGradient>
-                {isExistsResult &&
-                    <>
-                        <View style={styles.card}>
-                            <Text style={styles.description}>{survey.description}</Text>
-                            {role == "ADMIN" && <View style={styles.chartContainer}>
-                                <PieChart
-                                    data={results}
-                                    width={screenWidth - 60}
-                                    height={220}
-                                    chartConfig={chartConfig}
-                                    accessor="population"
-                                    backgroundColor="transparent"
-                                    paddingLeft="15"
-                                    absolute
-                                />
-                            </View>}
+                    <View style={styles.infoContainer}>
+                        <Text style={styles.infoText}>
+                            <Text style={styles.bold}>Group: </Text>{survey.groupe.label}
+                        </Text>
+                        <Text style={styles.infoText}>
+                            <Text style={styles.bold}>Start Date: </Text>{survey.startDate}
+                        </Text>
+                        <Text style={styles.infoText}>
+                            <Text style={styles.bold}>End Date: </Text>{survey.endDate}
+                        </Text>
+                    </View>
+                </View>
 
-                            <View style={styles.legendContainer}>
-                                <Text style={styles.optiontitle}>Options :</Text>
-                                {results.map((item, index) => (
-                                    <View key={index} style={styles.legendItem}>
-                                        <View style={[styles.legendColor, { backgroundColor: item.color }]} />
-                                        <Text style={styles.legendText}>{item.name} {role == "ADMIN" ? `: ${item.population} %` : null}</Text>
-                                    </View>
-                                ))}
-                            </View>
-                            <View style={styles.statsContainer}>
-                                {role == "ADMIN" && <Text style={styles.statsText}>Total des votes: {totalVotes}</Text>}
-                            </View>
-                            {role == "ADMIN" ?
-                                <TouchableOpacity style={styles.shareButton}/* onPress={onShare}*/>
-                                    <Text style={styles.shareButtonText}>Partager les résultats</Text>
-                                </TouchableOpacity>
-                                : participantVote == null ?
-                                    <View style={styles.voteContainer}>
-                                        <TouchableOpacity style={styles.voteButton} onPress={() => setAddModalVoteVisible(true)}>
-                                            <Text style={styles.shareButtonText}>
-                                                <MaterialIcons name="how-to-vote" size={24} color="white" /> vote
-                                            </Text>
-                                        </TouchableOpacity>
-                                    </View> :
-                                    participantVote?<View style={styles.commentsSection}>
-                                        <Text style={styles.commentsTitle}>Your vote:
-                                            <Text style={{
-                                                ...styles.ticketStatusValue,
-                                                color: participantVote.surveyValuedto.colorCode
-                                            }}>
-                                                {"  "+participantVote.surveyValuedto.title}
-                                            </Text>
-                                        </Text>
-                                        <TouchableOpacity style={styles.actionButton} onPress={() => setAddModalVoteVisible(true)} >
-                                            <MaterialIcons name="edit" size={18} color="#4a90e2" />
-                                            <Text style={styles.actionText}>modify</Text>
-                                        </TouchableOpacity>
-                                    </View>:null
-                            }
+
+                {role=="ADMIN"?<View style={styles.descriptionContainer}>
+                    <Text style={styles.description}>{survey.description}</Text>
+                    <Text style={styles.link} onPress={handleOptionsClick}>
+                        View Options
+                    </Text>
+                </View>
+                :
+                <View style={styles.legendContainer}>
+                            <Text style={styles.optiontitle}>Options :</Text>
+                            {results.map((item, index) => (
+                                <View key={index} style={styles.legendItem}>
+                                    <View style={[styles.legendColor, { backgroundColor: item.color }]} />
+                                    <Text style={styles.legendText}>{item.name} {role == "ADMIN" ? `: ${item.population} %` : null}</Text>
+                                </View>
+                            ))}
+                </View>}
+                {participantVote == null ?
+                    <View style={styles.voteContainer}>
+                        <TouchableOpacity style={styles.voteButton} onPress={() => setAddModalVoteVisible(true)}>
+                            <Text style={styles.shareButtonText}>
+                                <MaterialIcons name="how-to-vote" size={24} color="white" /> vote
+                            </Text>
+                        </TouchableOpacity>
+                    </View> :
+                    participantVote ? <View style={styles.commentsSection}>
+                        <Text style={styles.commentsTitle}>Your vote:
+                            <Text style={{
+                                ...styles.ticketStatusValue,
+                                color: participantVote.surveyValuedto.colorCode
+                            }}>
+                                {"  " + participantVote.surveyValuedto.title}
+                            </Text>
+                        </Text>
+                        <TouchableOpacity style={styles.actionButton} onPress={() => setAddModalVoteVisible(true)} >
+                            <MaterialIcons name="edit" size={18} color="#4a90e2" />
+                            <Text style={styles.actionText}>modify</Text>
+                        </TouchableOpacity>
+                    </View> : null
+                }
+                {isExistsResult && role == "ADMIN" &&
+                    <>
+                        <View style={styles.chartContainer}>
+                            <PieChart
+                                data={results}
+                                width={350}
+                                height={220}
+                                chartConfig={styles.chartConfig}
+                                accessor="population"
+                                backgroundColor="transparent"
+                            />
                         </View>
-                    </>}
-                <Modal visible={addModalVoteVisible} transparent animationType="fade">
+
+
+                        {/* Share Button Section */}
+                        <View style={styles.shareButtonContainer}>
+                            <Button
+                                title="Share Results"
+                                onPress={handleShare}
+                                buttonStyle={styles.shareButton}
+                                titleStyle={styles.shareButtonTitle}
+                            />
+                        </View>
+                    </>
+                }
+                 <Modal visible={addModalVoteVisible} transparent animationType="fade">
                     <View style={styles.modalContainer}>
                         <View style={styles.modalContent}>
                             <Text style={styles.modalTitle}>Options</Text>
@@ -204,93 +238,104 @@ const SurveyDetails = ({ navigation, route }) => {
                     </View>
                 </Modal>
             </ScrollView>
-        )
+        );
     }
 }
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#f0f0f0',
-    },
-    headerGradient: {
-        padding: 20,
-        paddingTop: 40,
-    },
-    title: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#fff',
-        marginBottom: 5,
-    },
-    subtitle: {
-        fontSize: 14,
-        color: '#ddd',
-    },
-    card: {
-        backgroundColor: '#fff',
-        borderRadius: 10,
-        margin: 10,
-        padding: 20,
-        shadowColor: "#000",
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
-        elevation: 5,
-    },
-    description: {
-        fontSize: 16,
-        color: '#333',
-        marginBottom: 20,
-        lineHeight: 24,
-    },
-    chartContainer: {
-        alignItems: 'center',
-        marginVertical: 20,
-    },
-    legendContainer: {
-        marginTop: 20,
-    },
-    legendItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 10,
-    },
-    legendColor: {
-        width: 20,
-        height: 20,
-        borderRadius: 10,
-        marginRight: 10,
-    },
-    legendText: {
-        fontSize: 16,
-        color: '#333',
-    },
-    statsContainer: {
-        marginTop: 20,
-        paddingTop: 20,
-        borderTopWidth: 1,
-        borderTopColor: '#eee',
-        justifyContent: "center"
-    },
     voteContainer: {
         borderTopWidth: 1,
         borderTopColor: '#eee',
-        alignItems: 'center',   
+        alignItems: 'center',
     },
-    statsText: {
-        fontSize: 16,
-        color: '#666',
+    container: {
+        flexGrow: 1,
+        backgroundColor: '#f7f8f9', // Fond clair pour une interface moderne
+        padding: 20,
+    },
+    headerContainer: {
+        marginBottom: 25,
+        paddingHorizontal: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: '#ddd', // Bordure pour séparer le header
+        paddingBottom: 15,
+    },
+    title: {
+        fontSize: 32,
+        fontFamily: 'Montserrat',
+        fontWeight: '700',
+        color: '#2c3e50',
         textAlign: 'center',
+        marginBottom: 10,
     },
-    shareButton: {
-        backgroundColor: '#4c669f',
-        padding: 15,
-        borderRadius: 5,
+    infoContainer: {
+        marginTop: 10,
+    },
+    infoText: {
+        fontSize: 16,
+        fontFamily: 'Montserrat',
+        color: '#7f8c8d',
+        textAlign: 'center',
+        marginVertical: 5,
+    },
+    bold: {
+        fontWeight: '700',
+        color: '#34495e',
+    },
+    descriptionContainer: {
+        marginTop: 30,
+        paddingHorizontal: 20,
+        marginBottom: 30,
+    },
+    description: {
+        fontSize: 16,
+        fontFamily: 'Montserrat',
+        color: '#7f8c8d',
+        textAlign: 'center',
+        marginBottom: 15,
+        lineHeight: 22,
+    },
+    link: {
+        color: '#3498db',
+        fontSize: 18,
+        fontFamily: 'Montserrat',
+        fontWeight: '600',
+        textDecorationLine: 'underline',
+        textAlign: 'center',
+        marginTop: 20,
+    },
+    chartContainer: {
         marginTop: 20,
         alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 5 },
+        shadowOpacity: 0.1,
+        shadowRadius: 5,
+        elevation: 5, // Ombre pour Android
+    },
+    chartConfig: {
+        backgroundGradientFrom: '#fff',
+        backgroundGradientTo: '#fff',
+        decimalPlaces: 0,
+        color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+        style: {
+            borderRadius: 16,
+        },
+    },
+    shareButtonContainer: {
+        marginTop: 30,
+        paddingHorizontal: 20,
+        alignItems: 'center',
+    },
+    shareButton: {
+        backgroundColor: '#3498db',
+        borderRadius: 50,
+        paddingVertical: 15,
+        width: '100%',
+    },
+    shareButtonTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#fff',
     },
     voteButton: {
         backgroundColor: '#4c669f',
@@ -301,15 +346,31 @@ const styles = StyleSheet.create({
         width: "50%",
         justifyContent: "center",
     },
-    shareButtonText: {
+     shareButtonText: {
         color: '#fff',
         fontSize: 16,
         fontWeight: 'bold',
     },
-    optiontitle: {
-        fontSize: 16,
-        fontWeight: 'bold',
+        commentsSection: {
         padding: 10,
+        // justifyContent: 'space-between',
+    },
+    commentsTitle: {
+        fontSize: 15,
+        fontWeight: 'bold',
+        // margin: 16,
+        color: '#333',
+        justifyContent: 'space-between',
+    },
+     actionButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginRight: 16,
+    },
+     actionText: {
+        fontSize: 14,
+        color: '#4a90e2',
+        marginLeft: 4,
     },
     modalContainer: {
         flex: 1,
@@ -371,32 +432,30 @@ const styles = StyleSheet.create({
     availableUserList: {
         width: '100%',
     },
-      commentsSection: {
-        padding: 10,
-       // justifyContent: 'space-between',
+    legendContainer: {
+        marginTop: 20,
     },
-    commentsTitle: {
-        fontSize: 15,
-        fontWeight: 'bold',
-       // margin: 16,
-        color: '#333',
-        justifyContent: 'space-between',
-    },
-    ticketStatusValue: {
-        fontSize: 14,
-        fontStyle: 'italic',
-        fontWeight: 'bold',
-    },
-     actionButton: {
+    legendItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginRight: 16,
+        marginBottom: 10,
     },
-      actionText: {
-        fontSize: 14,
-        color: '#4a90e2',
-        marginLeft: 4,
+    legendColor: {
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        marginRight: 10,
     },
+    legendText: {
+        fontSize: 16,
+        color: '#333',
+    },
+        optiontitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        padding: 10,
+    },
+    
 });
 export default SurveyDetails
 

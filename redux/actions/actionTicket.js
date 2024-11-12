@@ -32,9 +32,25 @@ export const fetchTicket = (token, idTicket) => {
         }
     }
 }
+export const fetchTickets = (token, idProject) => {
+    return async (dispatch) => {
+        try {
+            const response = await fetch(`http://${ADRESSE_IP}:9027/ticket/by_project/${idProject}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'content-type': 'application/json'
+                }
+            });
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            
+            console.log(error)
+        }
+    }
+}
 export const editTicket = (token,ticket) => async (dispatch) => {
   try {
-    console.log("idTicket: "+ticket.idTicket)
     const response = await fetch(`http://${ADRESSE_IP}:9027/ticket/${ticket.idTicket}`, {
                 method: 'PUT',
                 headers: {

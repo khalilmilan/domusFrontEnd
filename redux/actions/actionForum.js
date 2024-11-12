@@ -1,5 +1,22 @@
 import { ADRESSE_IP } from "../../constants";
-
+export const fetchForums = (token, idEvent) => {
+    return async (dispatch) => {
+        try {
+          console.log("forumAction: "+idEvent)
+            const response = await fetch(`http://${ADRESSE_IP}:9005/forum/forums_by_event/${idEvent}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'content-type': 'application/json'
+                }
+            });
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            
+            console.log(error)
+        }
+    }
+}
 export const fetchForum = (token, idForum) => {
     return async (dispatch) => {
         try {
@@ -38,9 +55,6 @@ export const addForum = (token,forum) => async (dispatch) => {
 
 export const updateForumm = (token,updateForum) => async (dispatch) => {
   try {
-    console.log("token: "+token)
-    console.log('idEvent: '+updateForum.idForum)
-    console.log('eventUpdate: '+JSON.stringify(updateForum))
     const response = await fetch(`http://${ADRESSE_IP}:9005/forum/${updateForum.idForum}`, {
                 method: 'PUT',
                 headers: {
@@ -67,7 +81,6 @@ export const deleteForumById = (token,idForum) => async (dispatch) => {
                     'content-type': 'application/json'
                 }
             });
-    console.log(response)
     return response;
   } catch (error) {
     console.log(error)

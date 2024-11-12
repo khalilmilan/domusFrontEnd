@@ -1,11 +1,11 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AUTH_USER } from "../constants";
 import { ADRESSE_IP } from "../../constants";
+import moment from 'moment';
+
+import { decode as atob } from 'base-64';
 //inscription 
 export const actionSignup = (user) => {
-    console.log("hi from action");
-    console.log(user)
-    
     return async (dispatch) => {
         try {
             let response = await fetch('http://'+ADRESSE_IP+':9002/user/register', {
@@ -16,27 +16,7 @@ export const actionSignup = (user) => {
                 body: JSON.stringify(user)
             }
             )
-            if (!response.ok) {
-                const responseError = await response.json();
-                const errorMsg = responseError.message;
-                let customeMsg = "oups, un probleme d'inscription"
-                
-                if (errorMsg === 'EMAIL_EXISTS') {
-                    customeMsg = 'cette adresse email existe déja'
-                } else if (errorMsg === 'TOO_MANY_ATTEMPS_TRY_LATER') {
-                    customeMsg = 'trop de tentatives veuillez ressayer plus tard'
-                } else if (errorMsg === 'WEAK_PASSWORD : Password should be at least 6 characters') {
-                    customeMsg = 'mot de passe faible'
-                } else if (errorMsg == 'INVALID_EMAIL') {
-                    customeMsg = 'email invalid'
-                }
-                return responseError;
-                throw new Error(errorMsg);
-            }
             const dataObj = await response.json();
-           
-            console.log("dataob")
-             console.log(dataObj)
             return dataObj
         } catch (error) {
             console.log(error)
@@ -46,57 +26,80 @@ export const actionSignup = (user) => {
 
 
 //connexion
-
-
-
-export const actionLogin = (email, password) => {
-
-    return async (dispatch) => {
-        console.log("email: "+email)
-        console.log("password: "+password)
+export const actionLogin = (formData) => {
+    return async (dispatch) => {  
         let response = await fetch('http://'+ADRESSE_IP+':9002/user/login', {
             method: 'POST',
             headers: {
                 'content-type': 'application/json'
             },
-            body: JSON.stringify({
-                email: email,
-                password: password,
-            })
+            body: JSON.stringify(formData)
         }
         ) 
         if (!response.ok) {
             const responseError = await response.json();
             const errorMsg = responseError.message;
-            throw new Error(errorMsg);
+            return errorMsg;
+           // throw new Error(errorMsg);
         }
         const dataObj = await response.json();
-        const token = dataObj.response.accessToken; // Remplace par le token récupéré
+        const token = dataObj.response.accessToken; 
+        const accessTokenExpiresAt = dataObj.response.accessTokenExpiresAt;
+        const refreshToken = dataObj.response.refreshToken;
         try {
             // Décoder le token JWT
             const decoded = decodeJWT(token);
+            console.log("decoded1: "+decoded)
             console.log("decoded: " + JSON.stringify(decoded))
             // Accéder au idUser (assume que le payload contient un champ `idUser`)
             const userId = decoded.userId;
-            console.log('idUser récupéré à partir du token JWT :', userId);
-            const userType= decoded.userType;
-            saveToAsyncStorage(dataObj.response.accessToken, userId,userType);
+            const userType = decoded.userType;
+            const phoneNumber = decoded.userPhoneNumber; 
+            saveToAsyncStorage(
+             dataObj.response.accessToken,
+             userId,
+             userType,
+             accessTokenExpiresAt,
+             refreshToken,
+             phoneNumber);
             dispatch(actionAuthUser(userId,dataObj.response.accessToken));
+           
         } catch (error) {
             console.error('Erreur lors du décodage du token JWT', error);
         }
+         return '';
     }
 }
 
+//deconnexion 
+export const actionLogout = (user) => {
+    return async (dispatch) => {
+        try {
+            let response = await fetch('http://'+ADRESSE_IP+':9002/user/logout', {
+                method: 'POST',
+                headers: {
+                    'content-type': 'application/json'
+                },
+                body: JSON.stringify(user)
+            }
+            )
+            const dataObj = await response.json();
+            return dataObj
+        } catch (error) {
+            console.log(error)
+        }
+    }
+}
 //enregister la data (token,userId,dateTokenExpiration)
-
-
-const saveToAsyncStorage = async (token, userId,userType) => {
+const saveToAsyncStorage = async (token, userId,role,dateTokenExpired,refreshToken,phoneNumber) => {
+    console.log('dateTokenExpired :'+dateTokenExpired)
     let t = await AsyncStorage.setItem("userDetails", JSON.stringify({
-        token: token,
-        userId: userId,
-        role:userType
-       // dateTokenExpired: dateTokenExpired
+        token,
+        userId,
+        role,
+        dateTokenExpired,
+        refreshToken,
+        phoneNumber
     }));
     
 }
@@ -108,7 +111,6 @@ const decodeJWT = (token) => {
         const jsonPayload = decodeURIComponent(atob(base64).split('').map((c) => {
             return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
         }).join(''));
-
         return JSON.parse(jsonPayload);
     } catch (error) {
         console.error('Error decoding JWT:', error);

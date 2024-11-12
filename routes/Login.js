@@ -1,136 +1,136 @@
 import {
-    Pressable, StyleSheet, Text, TextInput,
-    TouchableOpacity, View, Alert,
-    ActivityIndicator,
+     StyleSheet, Text, TextInput,
+    TouchableOpacity, View,ActivityIndicator,
+    Animated,
+    Keyboard,
     Image
 } from 'react-native'
-import React, { useEffect, useLayoutEffect, useState } from 'react'
-import { Platform } from 'react-native';
-import AntDesign from '@expo/vector-icons/AntDesign';
+import React, { useEffect, useState } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useDispatch } from 'react-redux';
-import { actionLogin, actionSignup } from '../redux/actions/actionAuth';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import { actionLogin } from '../redux/actions/actionAuth';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import {
+    Icon
+} from '@rneui/themed';
+import { THEME_COLOR } from '../constants';
 const Login = ({ navigation }) => {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [isSignup, setIsSingUp] = useState(true);
     const [error, setError] = useState();
+    const [formData, setFormData] = useState({
+        email: '',
+        password: '',
+    });
+
     const [isLoading, setISLoading] = useState(false);
-    const [show, setShow] = useState(false);
-    const [gender, setGender] = useState('');
-    const [firstName, setFirstName] = useState('');
-    const [lastName, setLastName] = useState('');
-    const [adresse, setAdress] = useState('');
-    const [birthDate, setBirthDate] = useState(new Date());
-    const [phoneNumber, setPhoneNumber] = useState('');
-    const [role, setRole] = useState("ADMIN")
-    const handleChange = (text) => {
-        // Optionnel : Formatage du numéro de téléphone
-        const formattedText = text.replace(/[^0-9]/g, ''); // Supprime tous les caractères non numériques
-        setPhoneNumber(formattedText);
-    };
-    const options = [
-        { id: '1', label: 'Male', value: 'MALE' },
-        { id: '2', label: 'Female', value: 'FEMELLE' },
-    ];
-    const onChange = (event, selectedDate) => {
-        const currentDate = selectedDate || birthDate;
-        setShow(Platform.OS === 'ios');
-        setBirthDate(currentDate);
-    };
-
-    const showDatepicker = () => {
-        setShow(true);
-    };
+    const [showAlert, setShowAlert] = useState(false);
+    const [alertMessage, setAlertMessage] = useState('');
+    const [alertType, setAlertType] = useState('error'); // 'error' ou 'success'
+    const fadeAnim = useState(new Animated.Value(0))[0];
+    const slideAnim = useState(new Animated.Value(-100))[0];
     const dispatch = useDispatch();
+    const showNotification = () => {
+        slideAnim.setValue(-100);
+        fadeAnim.setValue(0);
+        Animated.parallel([
+            Animated.timing(slideAnim, {
+                toValue: 0,
+                duration: 500,
+                useNativeDriver: true,
+            }),
+            Animated.timing(fadeAnim, {
+                toValue: 1,
+                duration: 500,
+                useNativeDriver: true,
+            }),
+        ]).start();
+        setTimeout(() => {
+            Animated.parallel([
+                Animated.timing(slideAnim, {
+                    toValue: -100,
+                    duration: 500,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(fadeAnim, {
+                    toValue: 0,
+                    duration: 500,
+                    useNativeDriver: true,
+                }),
+            ]).start(() => setShowAlert(false));
+        }, 3000);
+    };
+    const showAlertWithMessage = (message, type = 'error') => {
+        setAlertMessage(message);
+        setAlertType(type);
+        setShowAlert(true);
+        showNotification();
+    };
     useEffect(() => {
-        if (error != null) {
-            Alert.alert("erreur", error, [{ text: 'ok' }])
-        }
-
-    }, [error])
-
-    useLayoutEffect(() => {
         load();
     }, [])
     const load = async () => {
         const userDetailsStr = await AsyncStorage.getItem("userDetails");
-        if (userDetailsStr !== null) {
-            alert(userDetailsStr)
             const userDetailsObj = JSON.parse(userDetailsStr);
-            const { token, userId, dateTokenExpire } = userDetailsObj
-            const expireDate = new Date(dateTokenExpire);
-            if (expireDate <= new Date() || !token || !userId) {
+            const expireDate = new Date(userDetailsObj.dateTokenExpired * 1000);
+            if (expireDate <= new Date()) {
                 return;
             } else {
-                navigation.navigate('Home')
+                  navigation.navigate('Home')
             }
-        }
     }
     const handleSave = async () => {
-        console.log("hereser")
-        if (email.length > 0 && password.length > 0) {
-            console.log("email")
-            if (isSignup) {
-                console.log("isSignup")
-                setError(null);
-                setISLoading(true);
-                try {
-                    let user = {
-                        firstName,
-                        lastName,
-                        phoneNumber,
-                        email,
-                        password,
-                        birthDate,
-                        gender,
-                        adresse,
-                        role
-                    }
-                    console.log("logewi");
-                    console.log(user)
-                    const retour = await dispatch(actionSignup(user));
-
-                    if (retour.httpStatus == "OK") {
-                        setIsSingUp(false)
-                        setISLoading(false)
-                    } else if (retour.httpStatus == "BAD_REQUEST") {
-                        let errorMessage = ""
-                        retour.subErrors.map((error) => {
-                            errorMessage += error.field + ": " + error.message + "\n"
-                        })
-                        alert(errorMessage)
-                    } else if (retour.httpStatus == "CONFLICT") {
-                        alert(retour.message)
-                    }
-                } catch (error) {
-                    setError(error.message);
-                    setISLoading(false)
-                }
-
-            } else {
-                console.log('here is login')
-                setError(null);
-                setISLoading(true);
-                try {
-                    const login = await dispatch(actionLogin(email, password));
-                    navigation.navigate("Home");
-                } catch (error) {
-                    setError(error.message);
-                    setISLoading(false)
-                }
+        try {
+            Keyboard.dismiss();
+            if (!formData.email.trim()) {
+                showAlertWithMessage('Please enter your login');
+                return;
             }
-        } else {
-            alert("veuillez remplir tous les champs")
+            if (!formData.password.trim()) {
+                showAlertWithMessage('Please enter your password');
+                return;
+            }
+            const login = await dispatch(actionLogin(formData));
+            if (login.trim()) {
+                showAlertWithMessage(login);
+            } else {
+                showAlertWithMessage('Connected', 'success');
+                     setTimeout(() => {
+                       navigation.navigate('Home')
+                    }, 1500);
+            }
+
+        } catch (error) {
+            setError(error.message);
+            showAlertWithMessage(error.message);
         }
     }
     return (
         <LinearGradient
-            colors={['#1A91DA', "#FFF"]}
+            colors={[THEME_COLOR, "#8A84FF"]}
             style={styles.container}>
+
             <View style={styles.logo}>
+                {showAlert && (
+                    <Animated.View
+                        style={[
+                            styles.alert,
+                            alertType === 'success' ? styles.alertSuccess : styles.alertError,
+                            {
+                                opacity: fadeAnim,
+                                transform: [{ translateY: slideAnim }]
+                            }
+                        ]}
+                    >
+                        <View style={styles.alertContent}>
+                            <Ionicons
+                                name={alertType === 'success' ? 'checkmark-circle' : 'alert-circle'}
+                                size={24}
+                                color={alertType === 'success' ? '#fff' : '#fff'}
+                            />
+                            <Text style={styles.alertText}>{alertMessage}</Text>
+                        </View>
+                    </Animated.View>
+                )}
                 {
                     isLoading ?
                         <ActivityIndicator
@@ -138,114 +138,54 @@ const Login = ({ navigation }) => {
                             color="white"
                         />
                         :
-                        //<AntDesign name="twitter" size={80} color="white" />
-                        <Image 
-                        source={require('../assets/forum_domus_png2x.png')}
+
+                        <Image
+                            source={require('../assets/forum_domus_png2x.png')}
                         />
                 }
-
             </View>
-            <View style={styles.inputContainer}>
-                {!isSignup ?
-                    (<>
-                        <Text style={styles.text}>{isSignup ? "Inscription" : "Connexion"}</Text>
-                        <TextInput
-                            placeholder='Votre Email'
-                            keyboardType='email-adresse'
-                            style={styles.input}
-                            onChangeText={text => setEmail(text)}
-                        />
-                        <TextInput
-                            placeholder='Votre mot de passe'
-                            secureTextEntry
-                            style={styles.input}
-                            onChangeText={text => setPassword(text)}
-                        /></>)
-                    : (<>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="firstName"
-                            value={firstName}
-                            onChangeText={setFirstName}
-                        />
-                        <TextInput
-                            style={styles.input}
-                            placeholder="lastName"
-                            value={lastName}
-                            onChangeText={setLastName}
-                        />
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Address"
-                            value={adresse}
-                            onChangeText={setAdress}
-                            keyboardType="address"
-                        />
-                        <TextInput
-                            placeholder='Votre Email'
-                            keyboardType='email-adresse'
-                            style={styles.input}
-                            onChangeText={text => setEmail(text)}
-                        />
-                        <TextInput
-                            placeholder='Votre mot de passe'
-                            secureTextEntry
-                            style={styles.input}
-                            onChangeText={text => setPassword(text)} />
-                        <TextInput
-                            style={styles.input}
-                            placeholder="phoneNumber"
-                            onChangeText={handleChange}
-                            value={phoneNumber}
-                            keyboardType="numeric"
-                        />
-                        <View style={styles.containerDate}>
-                            <View style={styles.dateContainer}>
-                                <Text>birthDate : </Text>
-                                <TouchableOpacity onPress={showDatepicker} style={styles.button}>
-                                    <Text style={styles.buttonText}>Choisir une date</Text>
-                                </TouchableOpacity>
-                            </View>
-                            {show && (
-                                <DateTimePicker
-                                    testID="dateTimePicker"
-                                    value={new Date(birthDate)}
-                                    mode={'date'}
-                                    is24Hour={true}
-                                    display="default"
-                                    onChange={onChange}
-                                />
-                            )}
-                        </View>
-                        <Text style={styles.title}>Select Gender:</Text>
-                        {options.map((option) => (
-                            <TouchableOpacity
-                                key={option.id}
-                                style={styles.radioContainer}
-                                onPress={() => setGender(option.value)}
-                            >
-                                <View style={styles.radioButton}>
-                                    {gender === option.value && <View style={styles.radioButtonSelected} />}
-                                </View>
-                                <Text style={styles.radioText}>{option.label}</Text>
-                            </TouchableOpacity>
-                        ))}
-                    </>)}
-                <TouchableOpacity style={styles.touchable} onPress={handleSave}>
-                    <View style={styles.btnContainer}>
-                        <Text style={styles.btnText}>
-                            Valider
-                        </Text>
-                    </View>
-                </TouchableOpacity>
 
-                <Pressable
-                    onPress={() => setIsSingUp(prevState => !prevState)}
+            <View style={styles.inputContainer}>
+
+                <Text style={styles.text}> Connexion</Text>
+                <TextInput
+                    placeholder='Your Email'
+                    keyboardType='email-adresse'
+                    style={styles.input}
+                    onChangeText={text => setFormData({ ...formData, email: text })}
+                    value={formData.email}
+                />
+                <TextInput
+                    placeholder='Your password'
+                    secureTextEntry
+                    style={styles.input}
+                    onChangeText={text => setFormData({ ...formData, password: text })}
+                    value={formData.password}
+                />
+                <LinearGradient
+                    colors={["#FF6584", '#FF8BA7']}
+                    style={styles.filterGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
                 >
-                    <Text style={{ textAlign: 'center', marginTop: 9 }}>
-                        {isSignup ? "vers connexion" : "vers inscription"}
+                    <TouchableOpacity style={styles.touchable} onPress={handleSave}>
+                        <View style={styles.btnContainer}>
+                            <MaterialIcons name="login" size={24} color='white' />
+                            <Text style={styles.btnText}>
+                                Login
+                            </Text>
+                        </View>
+                    </TouchableOpacity>
+                </LinearGradient>
+                <TouchableOpacity
+                    onPress={() => navigation.navigate("Inscription")}
+                    style={styles.touchableInscription}
+                >
+                    <Icon name="app-registration" type="material" color="#FF6584" />
+                    <Text style={{ textAlign: 'center', marginTop: 9, color: '#FF6584', fontSize: 15 }}>
+                        Inscription
                     </Text>
-                </Pressable>
+                </TouchableOpacity>
             </View>
         </LinearGradient>
     )
@@ -277,61 +217,74 @@ const styles = StyleSheet.create({
         marginVertical: 10
     },
     touchable: {
-        marginVertical: 9
+        marginVertical: 9,
+        borderRadius: 16,
+
     },
     btnContainer: {
-        backgroundColor: 'turquoise',
-        borderRadius: 7,
-        padding: 9
+        backgroundColor: 'transparent',
+        borderRadius: 25,
+        padding: 6,
+        justifyContent: 'center',
+        flexDirection: 'row',
+        alignItems: 'center',
 
     },
     btnText: {
-        fontSize: 17,
+        fontSize: 20,
         textAlign: 'center',
-        textTransform: 'uppercase'
+        marginLeft: 5,
+        color: "white",
+        fontWeight: 'bold',
     },
     text: {
         color: 'white',
         fontSize: 25,
         textAlign: 'center'
     },
-    containerDate: {
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 20,
-    },
-    dateContainer: {
+    touchableInscription: {
+        padding: 5,
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        width: '100%',
     },
-    buttonText: {
+    filterGradient: {
+        alignSelf: 'center',
+        width: '80%',
+        borderRadius: 25,
+    },
+    alert: {
+        position: 'absolute',
+        top: 20,
+        left: 20,
+        right: 20,
+        borderRadius: 12,
+        zIndex: 100,
+        padding: 16,
+        flexDirection: 'row',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 4,
+        },
+        shadowOpacity: 0.3,
+        shadowRadius: 4.65,
+        elevation: 8,
+    },
+    alertSuccess: {
+        backgroundColor: '#00b894',
+    },
+    alertError: {
+        backgroundColor: '#ff7675',
+    },
+    alertContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    alertText: {
         color: 'white',
-        fontSize: 16,
-    },
-    radioContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 10,
-    },
-    radioButton: {
-        height: 20,
-        width: 20,
-        borderRadius: 10,
-        borderWidth: 2,
-        borderColor: '#000',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: 10,
-    },
-    radioButtonSelected: {
-        height: 10,
-        width: 10,
-        borderRadius: 5,
-        backgroundColor: '#000',
-    },
-    radioText: {
         fontSize: 16,
     },
 

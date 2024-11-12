@@ -34,11 +34,28 @@ export const fetchSurveyValue = (token, idSurvey) => {
         }
     }
 }
-export const editSurveyValue = (token,surveyValue) => async (dispatch) => {
+export const fetchSurveyValues = (token, idSurvey) => {
+    return async (dispatch) => {
+        try {
+            const response = await fetch(`http://${ADRESSE_IP}:9025/survey_value/by_survey/${idSurvey}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'content-type': 'application/json'
+                }
+            });
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            
+            console.log(error)
+        }
+    }
+}
+export const editSurveyValue = (token,idSurveyValue) => async (dispatch) => {
   try {
     console.log("idSurveyValue: "+surveyValue.idSurveyValue)
     console.log("surveyValue: "+JSON.stringify(surveyValue))
-    const response = await fetch(`http://${ADRESSE_IP}:9025/survey_value/${surveyValue.idSurveyValue}`, {
+    const response = await fetch(`http://${ADRESSE_IP}:9025/survey_value/${idSurveyValue}`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -52,9 +69,9 @@ export const editSurveyValue = (token,surveyValue) => async (dispatch) => {
   }
 };
 
-export const deleteSurveyValueById = (token,idSurvey) => async (dispatch) => {
+export const deleteSurveyValueById = (token,idSurveyValue) => async (dispatch) => {
   try {
-    const response = await fetch(`http://${ADRESSE_IP}:9024/survey/${idSurvey}`, {
+    const response = await fetch(`http://${ADRESSE_IP}:9025/survey_value/${idSurveyValue}`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${token}`,

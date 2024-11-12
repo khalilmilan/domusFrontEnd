@@ -79,7 +79,7 @@ export const deleteSurveyById = (token,idSurvey) => async (dispatch) => {
     console.log(error)
   }
 };
-export const fetchParticpantSurveys = (token, idUser) => {
+export const fetchParticpantSurveys = (token, idUser) => { 
     return async (dispatch) => {
         try {
             const response = await fetch(`http://${ADRESSE_IP}:9024/survey/by_participant/${idUser}`, {

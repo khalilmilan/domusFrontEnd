@@ -65,7 +65,8 @@ const EventItem = ({event,index,token,role,loadList }) => {
                     navigation.navigate('EditEvent', { eventId: event.idEvent })
                     setVisibleMenu(null);
                 }}
-                onDelete={async() => {
+                onDelete={
+                    async() => {
                     
                     const result = await dispatch(deleteEvent(token, event.idEvent));
                     loadList()
